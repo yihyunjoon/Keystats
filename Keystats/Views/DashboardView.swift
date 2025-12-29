@@ -1,16 +1,28 @@
+import SwiftData
 import SwiftUI
 
 struct DashboardView: View {
+    @Environment(InputMonitoringPermissionService.self) private
+        var permissionService
+    @Query(sort: \KeyPressRecord.count, order: .reverse) private var records:
+        [KeyPressRecord]
+
     var body: some View {
-        VStack {
-            Text(String(localized: "Dashboard"))
-                .font(.largeTitle)
-                .fontWeight(.bold)
+        ScrollView {
+            VStack {
+                if !permissionService.isGranted {
+                    PermissionCard()
+                }
+                KeyPressChartView(records: records)
+            }
+            .padding()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 #Preview {
     DashboardView()
+        .environment(InputMonitoringPermissionService())
+        .environment(KeyboardMonitorService())
+        .modelContainer(for: KeyPressRecord.self, inMemory: true)
 }
