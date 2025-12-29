@@ -1,17 +1,12 @@
-//
-//  KeystatsApp.swift
-//  Keystats
-//
-//  Created by yihyunjoon on 2025-12-29.
-//
-
 import SwiftUI
 
 @main
 struct KeystatsApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            KeystatsSplitView()
+                .frame(minWidth: 600, minHeight: 380)
         }
+        .defaultSize(width: 800, height: 480)
     }
 }
