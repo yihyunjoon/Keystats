@@ -30,8 +30,8 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
 
     var symbolName: String {
         switch self {
-        case .dashboard: "keyboard"
-        case .heatmap: "square.grid.3x3"
+        case .dashboard: "chart.bar"
+        case .heatmap: "keyboard"
         }
     }
 

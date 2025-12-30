@@ -27,6 +27,7 @@ struct KeystatsApp: App {
         WindowGroup(id: "main") {
             KeystatsSplitView()
                 .frame(minWidth: 600, minHeight: 380)
+                .onKeyPress { _ in .handled }
                 .environment(permissionService)
                 .environment(monitorService)
                 .onAppear {
