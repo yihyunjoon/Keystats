@@ -6,17 +6,29 @@ final class KeyPressRecord {
     @Attribute(.unique) var keyCode: Int
     var keyName: String
     var count: Int
-    var lastPressed: Date
 
     init(keyCode: Int, keyName: String) {
         self.keyCode = keyCode
         self.keyName = keyName
         self.count = 1
-        self.lastPressed = Date()
     }
 
     func incrementCount() {
         count += 1
-        lastPressed = Date()
+    }
+
+    static func initializeDefaultsIfNeeded(in context: ModelContext) {
+        let descriptor = FetchDescriptor<KeyPressRecord>()
+        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
+
+        guard existingCount == 0 else { return }
+
+        for (keyCode, keyName) in KeyCodeMapping.keyNames {
+            let record = KeyPressRecord(keyCode: keyCode, keyName: keyName)
+            record.count = 0
+            context.insert(record)
+        }
+
+        try? context.save()
     }
 }

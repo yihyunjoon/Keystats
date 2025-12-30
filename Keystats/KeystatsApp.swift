@@ -30,7 +30,7 @@ struct KeystatsApp: App {
                 .environment(permissionService)
                 .environment(monitorService)
                 .onAppear {
-                    initializeDefaultKeys()
+                    KeyPressRecord.initializeDefaultsIfNeeded(in: sharedModelContainer.mainContext)
                     monitorService.configure(
                         with: sharedModelContainer.mainContext
                     )
@@ -61,23 +61,5 @@ struct KeystatsApp: App {
         ) {
             MenuBarView()
         }
-    }
-
-    private func initializeDefaultKeys() {
-        let context = sharedModelContainer.mainContext
-
-        let descriptor = FetchDescriptor<KeyPressRecord>()
-        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
-
-        guard existingCount == 0 else { return }
-
-        for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-            let keyCode = KeyCodeMapping.keyCode(for: String(char))
-            let record = KeyPressRecord(keyCode: keyCode, keyName: String(char))
-            record.count = 0
-            context.insert(record)
-        }
-
-        try? context.save()
     }
 }

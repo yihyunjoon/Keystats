@@ -33,18 +33,7 @@ struct DataSettingsView: View {
     private func clearAllData() {
         do {
             try modelContext.delete(model: KeyPressRecord.self)
-
-            for char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-                let keyCode = KeyCodeMapping.keyCode(for: String(char))
-                let record = KeyPressRecord(
-                    keyCode: keyCode,
-                    keyName: String(char)
-                )
-                record.count = 0
-                modelContext.insert(record)
-            }
-
-            try modelContext.save()
+            KeyPressRecord.initializeDefaultsIfNeeded(in: modelContext)
         } catch {
             print("Failed to clear data: \(error)")
         }
