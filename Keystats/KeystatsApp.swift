@@ -30,7 +30,6 @@ struct KeystatsApp: App {
                 .environment(permissionService)
                 .environment(monitorService)
                 .onAppear {
-                    KeyPressRecord.initializeDefaultsIfNeeded(in: sharedModelContainer.mainContext)
                     monitorService.configure(
                         with: sharedModelContainer.mainContext
                     )

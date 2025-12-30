@@ -13,7 +13,14 @@ struct KeyPressChartView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    if records.isEmpty {
+      ContentUnavailableView(
+        String(localized: "No Data Yet"),
+        systemImage: "keyboard",
+        description: Text(String(localized: "Start typing to see your keyboard statistics."))
+      )
+      .frame(height: 300)
+    } else {
       ScrollView(.horizontal, showsIndicators: true) {
         Chart(records) { record in
           BarMark(
@@ -41,9 +48,10 @@ struct KeyPressChartView: View {
             domain.append(100)
           }
         )
-        .frame(width: records.count > visibleKeyCount ? chartWidth : nil, height: 300)
+        .padding(.vertical, 8)
+        .frame(width: chartWidth, height: 300)
       }
+      .padding()
     }
-    .padding()
   }
 }

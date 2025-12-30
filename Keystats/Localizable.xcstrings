@@ -200,6 +200,9 @@
         }
       }
     },
+    "No Data Yet" : {
+
+    },
     "Open Keystats" : {
 
     },
@@ -287,6 +290,9 @@
       }
     },
     "Settings..." : {
+
+    },
+    "Start typing to see your keyboard statistics." : {
 
     },
     "This action cannot be undone." : {

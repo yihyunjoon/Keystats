@@ -33,7 +33,6 @@ struct DataSettingsView: View {
     private func clearAllData() {
         do {
             try modelContext.delete(model: KeyPressRecord.self)
-            KeyPressRecord.initializeDefaultsIfNeeded(in: modelContext)
         } catch {
             print("Failed to clear data: \(error)")
         }
