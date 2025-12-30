@@ -133,6 +133,9 @@
         }
       }
     },
+    "Heatmap" : {
+      "comment" : "Title for the Heatmap tab, shown in the sidebar."
+    },
     "Input Monitoring" : {
       "localizations" : {
         "en" : {
@@ -290,6 +293,9 @@
       }
     },
     "Settings..." : {
+
+    },
+    "Start typing to see your keyboard heatmap." : {
 
     },
     "Start typing to see your keyboard statistics." : {
