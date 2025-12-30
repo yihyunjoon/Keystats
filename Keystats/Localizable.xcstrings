@@ -181,6 +181,9 @@
         }
       }
     },
+    "Keystats" : {
+
+    },
     "Monitoring" : {
       "localizations" : {
         "en" : {
@@ -196,6 +199,9 @@
           }
         }
       }
+    },
+    "Open Keystats" : {
+
     },
     "Open System Settings" : {
       "localizations" : {
@@ -245,6 +251,9 @@
         }
       }
     },
+    "Quit" : {
+
+    },
     "Reset" : {
       "localizations" : {
         "en" : {
@@ -276,6 +285,9 @@
           }
         }
       }
+    },
+    "Settings..." : {
+
     },
     "This action cannot be undone." : {
       "localizations" : {

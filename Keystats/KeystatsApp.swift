@@ -24,7 +24,7 @@ struct KeystatsApp: App {
     }()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             KeystatsSplitView()
                 .frame(minWidth: 600, minHeight: 380)
                 .environment(permissionService)
@@ -53,6 +53,13 @@ struct KeystatsApp: App {
                 .environment(permissionService)
                 .environment(monitorService)
                 .modelContainer(sharedModelContainer)
+        }
+        
+        MenuBarExtra(
+            String(localized: "Keystats"),
+            systemImage: "keyboard"
+        ) {
+            MenuBarView()
         }
     }
 
