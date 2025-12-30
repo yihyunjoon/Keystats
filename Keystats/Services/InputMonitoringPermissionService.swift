@@ -5,68 +5,68 @@ import Observation
 @Observable
 @MainActor
 final class InputMonitoringPermissionService {
-    // MARK: - Properties
+  // MARK: - Properties
 
-    private(set) var isGranted: Bool = false
-    private var pollingTimer: Timer?
+  private(set) var isGranted: Bool = false
+  private var pollingTimer: Timer?
 
-    // MARK: - Initialization
+  // MARK: - Initialization
 
-    init() {
-        checkPermission()
+  init() {
+    checkPermission()
+  }
+
+  // MARK: - Permission Check
+
+  func checkPermission() {
+    let status = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+    isGranted = (status == kIOHIDAccessTypeGranted)
+  }
+
+  // MARK: - Permission Request
+
+  func requestPermission() {
+    let granted = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+
+    if granted {
+      isGranted = true
+    } else {
+      startPollingForPermission()
     }
+  }
 
-    // MARK: - Permission Check
+  // MARK: - Open System Settings
 
-    func checkPermission() {
-        let status = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
-        isGranted = (status == kIOHIDAccessTypeGranted)
-    }
+  func openSystemSettings() {
+    let url = URL(
+      string:
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+    )!
+    NSWorkspace.shared.open(url)
+  }
 
-    // MARK: - Permission Request
+  // MARK: - Polling
 
-    func requestPermission() {
-        let granted = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+  func startPollingForPermission() {
+    pollingTimer?.invalidate()
 
-        if granted {
-            isGranted = true
-        } else {
-            startPollingForPermission()
+    pollingTimer = Timer.scheduledTimer(
+      withTimeInterval: 1.0,
+      repeats: true
+    ) { [weak self] _ in
+      guard let self else { return }
+      Task { @MainActor [weak self] in
+        guard let self else { return }
+        self.checkPermission()
+        if self.isGranted {
+          self.stopPolling()
         }
+      }
     }
+  }
 
-    // MARK: - Open System Settings
-
-    func openSystemSettings() {
-        let url = URL(
-            string:
-                "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
-        )!
-        NSWorkspace.shared.open(url)
-    }
-
-    // MARK: - Polling
-
-    func startPollingForPermission() {
-        pollingTimer?.invalidate()
-
-        pollingTimer = Timer.scheduledTimer(
-            withTimeInterval: 1.0,
-            repeats: true
-        ) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.checkPermission()
-                if self.isGranted {
-                    self.stopPolling()
-                }
-            }
-        }
-    }
-
-    func stopPolling() {
-        pollingTimer?.invalidate()
-        pollingTimer = nil
-    }
+  func stopPolling() {
+    pollingTimer?.invalidate()
+    pollingTimer = nil
+  }
 }
