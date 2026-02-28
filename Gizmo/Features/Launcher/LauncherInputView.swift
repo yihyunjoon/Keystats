@@ -1,6 +1,14 @@
 import SwiftUI
 
 struct LauncherInputView: View {
+  private enum Layout {
+    static let maxVisibleRows = 5
+    static let maxVisibleRowsWhenError = 3
+    static let rowHeight: CGFloat = 33
+    static let rowSpacing: CGFloat = 6
+    static let listVerticalPadding: CGFloat = 2
+  }
+
   // MARK: - Properties
 
   let onClose: () -> Void
@@ -32,6 +40,24 @@ struct LauncherInputView: View {
     }
   }
 
+  private var visibleRows: Int {
+    let maxRows =
+      executionError == nil
+      ? Layout.maxVisibleRows
+      : Layout.maxVisibleRowsWhenError
+    return min(filteredCommands.count, maxRows)
+  }
+
+  private var commandListHeight: CGFloat {
+    guard visibleRows > 0 else { return 0 }
+
+    let rowCount = CGFloat(visibleRows)
+    let rowHeights = rowCount * Layout.rowHeight
+    let rowSpacings = CGFloat(max(0, visibleRows - 1)) * Layout.rowSpacing
+    let verticalPadding = Layout.listVerticalPadding * 2
+    return rowHeights + rowSpacings + verticalPadding
+  }
+
   // MARK: - Body
 
   var body: some View {
@@ -61,7 +87,7 @@ struct LauncherInputView: View {
           .foregroundStyle(.secondary)
       } else {
         ScrollView {
-          LazyVStack(spacing: 6) {
+          LazyVStack(alignment: .leading, spacing: Layout.rowSpacing) {
             ForEach(Array(filteredCommands.enumerated()), id: \.element.id) {
               index, command in
               commandRow(
@@ -74,9 +100,9 @@ struct LauncherInputView: View {
               }
             }
           }
-          .padding(.vertical, 2)
+          .padding(.vertical, Layout.listVerticalPadding)
         }
-        .frame(maxHeight: 140)
+        .frame(height: commandListHeight, alignment: .top)
       }
 
       if let executionError {
@@ -142,8 +168,10 @@ struct LauncherInputView: View {
     HStack {
       Text(title)
         .font(.system(size: 14, weight: .medium, design: .rounded))
+        .foregroundStyle(.primary)
       Spacer(minLength: 0)
     }
+    .frame(maxWidth: .infinity, alignment: .leading)
     .padding(.horizontal, 10)
     .padding(.vertical, 8)
     .background(

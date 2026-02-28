@@ -3,6 +3,11 @@ import SwiftUI
 
 @MainActor
 final class LauncherPanelService: NSObject, NSWindowDelegate {
+  private enum PanelLayout {
+    static let width: CGFloat = 680
+    static let height: CGFloat = 320
+  }
+
   // MARK: - Properties
 
   private let windowManagerService: WindowManagerService
@@ -51,6 +56,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
     focusedWindowBeforePanelOpen = AXUIElement.focusedWindowElement()
     activateEnglishInputSourceIfNeeded()
+    panel.setContentSize(NSSize(width: PanelLayout.width, height: PanelLayout.height))
     positionPanelOnActiveScreen(panel)
     panel.makeKeyAndOrderFront(nil)
 
@@ -87,7 +93,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     guard let targetScreen else { return }
 
     let screenFrame = targetScreen.frame
-    let panelSize = panel.frame.size
+    let panelSize = NSSize(width: PanelLayout.width, height: PanelLayout.height)
     let frame = NSRect(
       x: floor(screenFrame.midX - (panelSize.width / 2)),
       y: floor(screenFrame.midY - (panelSize.height / 2)),
@@ -124,7 +130,12 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     let hostingController = NSHostingController(rootView: contentView)
 
     let panel = LauncherPanel(
-      contentRect: NSRect(x: 0, y: 0, width: 680, height: 320),
+      contentRect: NSRect(
+        x: 0,
+        y: 0,
+        width: PanelLayout.width,
+        height: PanelLayout.height
+      ),
       styleMask: [.nonactivatingPanel],
       backing: .buffered,
       defer: false
