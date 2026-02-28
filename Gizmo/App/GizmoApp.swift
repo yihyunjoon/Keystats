@@ -17,6 +17,8 @@ struct GizmoApp: App {
         .onKeyPress { _ in .handled }
         .environment(appEnvironment.permissionService)
         .environment(appEnvironment.monitorService)
+        .environment(bootstrap.accessibilityPermissionService)
+        .environment(bootstrap.windowManagerService)
         .onAppear {
           appEnvironment.configureMonitoring(
             context: bootstrap.sharedModelContainer.mainContext

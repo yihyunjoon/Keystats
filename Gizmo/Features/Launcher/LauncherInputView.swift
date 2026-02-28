@@ -4,9 +4,33 @@ struct LauncherInputView: View {
   // MARK: - Properties
 
   let onClose: () -> Void
+  let onExecuteCommand: (LauncherCommand) -> Result<Void, WindowManagerError>
+  let onOpenAccessibilitySettings: () -> Void
 
   @State private var query: String = ""
+  @State private var selectedCommandIndex: Int = 0
+  @State private var executionError: WindowManagerError?
+
   @FocusState private var isInputFocused: Bool
+
+  private let commands = LauncherCommand.all
+
+  private var filteredCommands: [LauncherCommand] {
+    let normalizedQuery = query
+      .lowercased()
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let tokens = normalizedQuery.split(whereSeparator: \.isWhitespace)
+
+    guard !tokens.isEmpty else { return commands }
+
+    return commands.filter { command in
+      let haystack = ([command.title] + command.keywords)
+        .joined(separator: " ")
+        .lowercased()
+
+      return tokens.allSatisfy { haystack.contains($0) }
+    }
+  }
 
   // MARK: - Body
 
@@ -24,17 +48,49 @@ struct LauncherInputView: View {
         .textFieldStyle(.plain)
         .font(.system(size: 24, weight: .medium, design: .rounded))
         .focused($isInputFocused)
+        .onSubmit {
+          executeSelectedCommand()
+        }
       }
 
       Divider()
 
-      Text(
-        query.isEmpty
-          ? String(localized: "Type to start searching.")
-          : query
-      )
-      .font(.system(size: 13, weight: .regular, design: .rounded))
-      .foregroundStyle(.secondary)
+      if filteredCommands.isEmpty {
+        Text(String(localized: "No matching commands."))
+          .font(.system(size: 13, weight: .regular, design: .rounded))
+          .foregroundStyle(.secondary)
+      } else {
+        ScrollView {
+          LazyVStack(spacing: 6) {
+            ForEach(Array(filteredCommands.enumerated()), id: \.element.id) {
+              index, command in
+              commandRow(
+                title: command.title,
+                isSelected: index == selectedCommandIndex
+              )
+              .onTapGesture {
+                selectedCommandIndex = index
+                executeSelectedCommand()
+              }
+            }
+          }
+          .padding(.vertical, 2)
+        }
+        .frame(maxHeight: 140)
+      }
+
+      if let executionError {
+        VStack(alignment: .leading, spacing: 8) {
+          Text(executionError.localizedDescription)
+            .font(.footnote)
+            .foregroundStyle(.red)
+
+          Button(String(localized: "Open System Settings")) {
+            onOpenAccessibilitySettings()
+          }
+          .buttonStyle(.bordered)
+        }
+      }
     }
     .padding(16)
     .frame(width: 640)
@@ -48,16 +104,76 @@ struct LauncherInputView: View {
     .onAppear {
       focusInput()
     }
+    .onChange(of: query) { _, _ in
+      selectedCommandIndex = 0
+      executionError = nil
+    }
     .onReceive(NotificationCenter.default.publisher(for: .launcherPanelDidOpen)) { _ in
       query = ""
+      executionError = nil
+      selectedCommandIndex = 0
       focusInput()
     }
     .onExitCommand {
       onClose()
     }
+    .onKeyPress(.downArrow) {
+      moveSelection(by: 1)
+      return .handled
+    }
+    .onKeyPress(.upArrow) {
+      moveSelection(by: -1)
+      return .handled
+    }
+    .onKeyPress(.return) {
+      executeSelectedCommand()
+      return .handled
+    }
+    .onKeyPress(.escape) {
+      onClose()
+      return .handled
+    }
   }
 
-  // MARK: - Focus
+  // MARK: - Private
+
+  @ViewBuilder
+  private func commandRow(title: String, isSelected: Bool) -> some View {
+    HStack {
+      Text(title)
+        .font(.system(size: 14, weight: .medium, design: .rounded))
+      Spacer(minLength: 0)
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 8)
+    .background(
+      RoundedRectangle(cornerRadius: 8, style: .continuous)
+        .fill(isSelected ? .blue.opacity(0.22) : .clear)
+    )
+  }
+
+  private func executeSelectedCommand() {
+    guard !filteredCommands.isEmpty else { return }
+
+    let index = max(0, min(selectedCommandIndex, filteredCommands.count - 1))
+    let command = filteredCommands[index]
+
+    switch onExecuteCommand(command) {
+    case .success:
+      executionError = nil
+      onClose()
+    case .failure(let error):
+      executionError = error
+    }
+  }
+
+  private func moveSelection(by delta: Int) {
+    guard !filteredCommands.isEmpty else { return }
+
+    let count = filteredCommands.count
+    let nextIndex = (selectedCommandIndex + delta + count) % count
+    selectedCommandIndex = nextIndex
+  }
 
   private func focusInput() {
     DispatchQueue.main.async {
@@ -67,5 +183,9 @@ struct LauncherInputView: View {
 }
 
 #Preview {
-  LauncherInputView {}
+  LauncherInputView(
+    onClose: {},
+    onExecuteCommand: { _ in .success(()) },
+    onOpenAccessibilitySettings: {}
+  )
 }

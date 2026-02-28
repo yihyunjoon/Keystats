@@ -3,12 +3,21 @@ import SwiftData
 @MainActor
 struct AppBootstrap {
   let hotKeyService: GlobalHotKeyService
+  let accessibilityPermissionService: AccessibilityPermissionService
+  let windowManagerService: WindowManagerService
   let launcherPanelService: LauncherPanelService
   let sharedModelContainer: ModelContainer
 
   init() {
     let hotKeyService = GlobalHotKeyService()
-    let launcherPanelService = LauncherPanelService()
+    let accessibilityPermissionService = AccessibilityPermissionService()
+    let windowManagerService = WindowManagerService(
+      permissionService: accessibilityPermissionService
+    )
+    let launcherPanelService = LauncherPanelService(
+      windowManagerService: windowManagerService,
+      accessibilityPermissionService: accessibilityPermissionService
+    )
 
     hotKeyService.onHotKeyPressed = {
       Task { @MainActor in
@@ -18,6 +27,8 @@ struct AppBootstrap {
     hotKeyService.configure()
 
     self.hotKeyService = hotKeyService
+    self.accessibilityPermissionService = accessibilityPermissionService
+    self.windowManagerService = windowManagerService
     self.launcherPanelService = launcherPanelService
     self.sharedModelContainer = Self.makeSharedModelContainer()
   }

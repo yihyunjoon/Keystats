@@ -5,8 +5,23 @@ import SwiftUI
 final class LauncherPanelService: NSObject, NSWindowDelegate {
   // MARK: - Properties
 
+  private let windowManagerService: WindowManagerService
+  private let accessibilityPermissionService: AccessibilityPermissionService
+
   private var panel: LauncherPanel?
   private var previousInputSourceID: String?
+  private var focusedWindowBeforePanelOpen: AXUIElement?
+
+  // MARK: - Initialization
+
+  init(
+    windowManagerService: WindowManagerService,
+    accessibilityPermissionService: AccessibilityPermissionService
+  ) {
+    self.windowManagerService = windowManagerService
+    self.accessibilityPermissionService = accessibilityPermissionService
+    super.init()
+  }
 
   // MARK: - Panel Control
 
@@ -21,6 +36,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   func hidePanel() {
     restoreInputSourceIfNeeded()
     panel?.orderOut(nil)
+    focusedWindowBeforePanelOpen = nil
   }
 
   func showPanel() {
@@ -30,6 +46,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
     guard let panel else { return }
 
+    focusedWindowBeforePanelOpen = AXUIElement.focusedWindowElement()
     activateEnglishInputSourceIfNeeded()
     positionPanelOnActiveScreen(panel)
     panel.makeKeyAndOrderFront(nil)
@@ -79,14 +96,32 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   }
 
   private func createPanel() -> LauncherPanel {
-    let contentView = LauncherInputView { [weak self] in
-      self?.hidePanel()
-    }
+    let contentView = LauncherInputView(
+      onClose: { [weak self] in
+        self?.hidePanel()
+      },
+      onExecuteCommand: { [weak self] command in
+        guard let self else { return .failure(.applyFailed) }
+        let result = self.windowManagerService.execute(
+          command.action,
+          preferredWindowElement: self.focusedWindowBeforePanelOpen
+        )
+
+        if case .success = result {
+          self.focusedWindowBeforePanelOpen = nil
+        }
+
+        return result
+      },
+      onOpenAccessibilitySettings: { [weak self] in
+        self?.accessibilityPermissionService.openSystemSettings()
+      }
+    )
 
     let hostingController = NSHostingController(rootView: contentView)
 
     let panel = LauncherPanel(
-      contentRect: NSRect(x: 0, y: 0, width: 680, height: 140),
+      contentRect: NSRect(x: 0, y: 0, width: 680, height: 320),
       styleMask: [.nonactivatingPanel],
       backing: .buffered,
       defer: false

@@ -4,6 +4,38 @@
     "%lld" : {
 
     },
+    "Accessibility Permission" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility Permission"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "손쉬운 사용 권한"
+          }
+        }
+      }
+    },
+    "Accessibility permission is required." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accessibility permission is required."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "손쉬운 사용 권한이 필요합니다."
+          }
+        }
+      }
+    },
     "Active Display" : {
       "comment" : "Launcher window placement option for the currently active display."
     },
@@ -95,6 +127,25 @@
     },
     "Display With Mouse" : {
       "comment" : "Launcher window placement option for the display containing the mouse cursor."
+    },
+    "Executed: %@" : {
+
+    },
+    "Failed to move window." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to move window."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "창 이동에 실패했습니다."
+          }
+        }
+      }
     },
     "Force English Input Source" : {
 
@@ -220,6 +271,54 @@
     "No Data Yet" : {
 
     },
+    "No focused window." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No focused window."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "포커스된 창이 없습니다."
+          }
+        }
+      }
+    },
+    "No matching commands." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching commands."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일치하는 명령이 없습니다."
+          }
+        }
+      }
+    },
+    "No usable screen found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No usable screen found."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용 가능한 디스플레이를 찾을 수 없습니다."
+          }
+        }
+      }
+    },
     "Open Gizmo" : {
 
     },
@@ -321,6 +420,38 @@
     "Start typing to see your keyboard statistics." : {
 
     },
+    "Status" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "상태"
+          }
+        }
+      }
+    },
+    "Test Commands" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test Commands"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "테스트 명령"
+          }
+        }
+      }
+    },
     "This action cannot be undone." : {
       "localizations" : {
         "en" : {
@@ -337,11 +468,57 @@
         }
       }
     },
-    "Type to start searching." : {
-
+    "Tile left half" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tile left half"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "창 왼쪽 반으로 배치"
+          }
+        }
+      }
+    },
+    "Tile right half" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tile right half"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "창 오른쪽 반으로 배치"
+          }
+        }
+      }
     },
     "When enabled, launcher input uses an English keyboard layout while the launcher is open." : {
 
+    },
+    "Window Manager" : {
+      "comment" : "Title for the Window Manager tab, shown in the sidebar.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window Manager"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "윈도우 매니저"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
