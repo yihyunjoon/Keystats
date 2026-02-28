@@ -11,13 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		CFBE1FF92F02538C007C8C33 /* Keystats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Keystats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFBE1FF92F02538C007C8C33 /* Gizmo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gizmo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CFBE1FFB2F02538C007C8C33 /* Keystats */ = {
+		CFBE1FFB2F02538C007C8C33 /* Gizmo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Keystats;
+			path = Gizmo;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -37,7 +37,7 @@
 		CFBE1FF02F02538C007C8C33 = {
 			isa = PBXGroup;
 			children = (
-				CFBE1FFB2F02538C007C8C33 /* Keystats */,
+				CFBE1FFB2F02538C007C8C33 /* Gizmo */,
 				CFBE1FFA2F02538C007C8C33 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,7 +45,7 @@
 		CFBE1FFA2F02538C007C8C33 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CFBE1FF92F02538C007C8C33 /* Keystats.app */,
+				CFBE1FF92F02538C007C8C33 /* Gizmo.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,9 +53,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CFBE1FF82F02538C007C8C33 /* Keystats */ = {
+		CFBE1FF82F02538C007C8C33 /* Gizmo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CFBE20042F02538D007C8C33 /* Build configuration list for PBXNativeTarget "Keystats" */;
+			buildConfigurationList = CFBE20042F02538D007C8C33 /* Build configuration list for PBXNativeTarget "Gizmo" */;
 			buildPhases = (
 				CFBE1FF52F02538C007C8C33 /* Sources */,
 				CFBE1FF62F02538C007C8C33 /* Frameworks */,
@@ -66,14 +66,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CFBE1FFB2F02538C007C8C33 /* Keystats */,
+				CFBE1FFB2F02538C007C8C33 /* Gizmo */,
 			);
-			name = Keystats;
+			name = Gizmo;
 			packageProductDependencies = (
 				CFBE20092F02538D007C8C33 /* KeyboardShortcuts */,
 			);
-			productName = Keystats;
-			productReference = CFBE1FF92F02538C007C8C33 /* Keystats.app */;
+			productName = Gizmo;
+			productReference = CFBE1FF92F02538C007C8C33 /* Gizmo.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -91,7 +91,7 @@
 					};
 				};
 			};
-			buildConfigurationList = CFBE1FF42F02538C007C8C33 /* Build configuration list for PBXProject "Keystats" */;
+			buildConfigurationList = CFBE1FF42F02538C007C8C33 /* Build configuration list for PBXProject "Gizmo" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -108,7 +108,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CFBE1FF82F02538C007C8C33 /* Keystats */,
+				CFBE1FF82F02538C007C8C33 /* Gizmo */,
 			);
 		};
 /* End PBXProject section */
@@ -268,7 +268,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Keystats;
+				INFOPLIST_KEY_CFBundleDisplayName = Gizmo;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -277,7 +277,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.Keystats;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.Gizmo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -302,7 +302,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Keystats;
+				INFOPLIST_KEY_CFBundleDisplayName = Gizmo;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -311,7 +311,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.Keystats;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.Gizmo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -326,7 +326,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		CFBE1FF42F02538C007C8C33 /* Build configuration list for PBXProject "Keystats" */ = {
+		CFBE1FF42F02538C007C8C33 /* Build configuration list for PBXProject "Gizmo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFBE20022F02538D007C8C33 /* Debug */,
@@ -335,7 +335,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CFBE20042F02538D007C8C33 /* Build configuration list for PBXNativeTarget "Keystats" */ = {
+		CFBE20042F02538D007C8C33 /* Build configuration list for PBXNativeTarget "Gizmo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFBE20052F02538D007C8C33 /* Debug */,

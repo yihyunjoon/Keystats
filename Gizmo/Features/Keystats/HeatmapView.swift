@@ -6,14 +6,24 @@ struct HeatmapView: View {
     var permissionService
   @Query private var records: [KeyPressRecord]
 
+  private var sortedRecords: [KeyPressRecord] {
+    records.sorted { $0.count > $1.count }
+  }
+
   var body: some View {
     ScrollView {
-      VStack {
+      VStack(alignment: .leading, spacing: 24) {
         if !permissionService.isGranted {
           PermissionCard()
         }
+        KeyPressChartView(records: sortedRecords)
         KeyboardHeatmapView(records: records)
+
+        Divider()
+
+        SettingsView()
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
       .padding()
     }
   }

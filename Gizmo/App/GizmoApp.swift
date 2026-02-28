@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 @main
-struct KeystatsApp: App {
+struct GizmoApp: App {
   @State private var appEnvironment = AppEnvironment()
   private let bootstrap: AppBootstrap
 
@@ -12,7 +12,7 @@ struct KeystatsApp: App {
 
   var body: some Scene {
     WindowGroup(id: "main") {
-      KeystatsSplitView()
+      GizmoSplitView()
         .frame(minWidth: 600, minHeight: 380)
         .onKeyPress { _ in .handled }
         .environment(appEnvironment.permissionService)
@@ -29,15 +29,8 @@ struct KeystatsApp: App {
     .modelContainer(bootstrap.sharedModelContainer)
     .defaultSize(width: 400, height: 600)
 
-    Settings {
-      SettingsView()
-        .environment(appEnvironment.permissionService)
-        .environment(appEnvironment.monitorService)
-        .modelContainer(bootstrap.sharedModelContainer)
-    }
-
     MenuBarExtra(
-      String(localized: "Keystats"),
+      String(localized: "Gizmo"),
       systemImage: "keyboard"
     ) {
       MenuBarView()

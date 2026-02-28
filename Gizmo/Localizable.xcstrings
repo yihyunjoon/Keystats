@@ -74,23 +74,6 @@
         }
       }
     },
-    "Dashboard" : {
-      "comment" : "Title for the Dashboard tab, shown in the sidebar.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dashboard"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "대시보드"
-          }
-        }
-      }
-    },
     "Data" : {
       "localizations" : {
         "en" : {
@@ -117,6 +100,7 @@
 
     },
     "General" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -131,6 +115,9 @@
           }
         }
       }
+    },
+    "Gizmo" : {
+
     },
     "Global Shortcut" : {
 
@@ -205,9 +192,6 @@
         }
       }
     },
-    "Keystats" : {
-
-    },
     "Launcher" : {
       "comment" : "Title for the Launcher tab, shown in the sidebar."
     },
@@ -236,7 +220,7 @@
     "No Data Yet" : {
 
     },
-    "Open Keystats" : {
+    "Open Gizmo" : {
 
     },
     "Open System Settings" : {
@@ -329,9 +313,6 @@
       }
     },
     "Set a global shortcut to open or close the launcher input window." : {
-
-    },
-    "Settings..." : {
 
     },
     "Start typing to see your keyboard heatmap." : {

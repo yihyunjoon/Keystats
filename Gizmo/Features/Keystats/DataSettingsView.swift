@@ -8,15 +8,21 @@ struct DataSettingsView: View {
   @State private var showClearConfirmation = false
 
   var body: some View {
-    Form {
-      Section {
-        Button(String(localized: "Reset"), role: .destructive) {
-          showClearConfirmation = true
-        }
-        .disabled(records.isEmpty)
+    VStack(alignment: .leading, spacing: 12) {
+      Text(String(localized: "Data"))
+        .font(.headline)
+
+      Button(String(localized: "Reset"), role: .destructive) {
+        showClearConfirmation = true
       }
+      .disabled(records.isEmpty)
     }
-    .formStyle(.grouped)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(16)
+    .background(
+      .regularMaterial,
+      in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+    )
     .alert(
       String(localized: "Clear All Data?"),
       isPresented: $showClearConfirmation

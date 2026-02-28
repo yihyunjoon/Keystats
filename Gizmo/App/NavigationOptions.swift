@@ -1,15 +1,13 @@
 import SwiftUI
 
 enum NavigationItem: Equatable, Hashable, Identifiable {
-  case dashboard
   case heatmap
   case launcher
 
-  static let mainPages: [NavigationItem] = [.dashboard, .heatmap, .launcher]
+  static let mainPages: [NavigationItem] = [.heatmap, .launcher]
 
   var id: String {
     switch self {
-    case .dashboard: return "Dashboard"
     case .heatmap: return "Heatmap"
     case .launcher: return "Launcher"
     }
@@ -17,11 +15,6 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
 
   var name: LocalizedStringResource {
     switch self {
-    case .dashboard:
-      LocalizedStringResource(
-        "Dashboard",
-        comment: "Title for the Dashboard tab, shown in the sidebar."
-      )
     case .heatmap:
       LocalizedStringResource(
         "Heatmap",
@@ -37,7 +30,6 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
 
   var symbolName: String {
     switch self {
-    case .dashboard: "chart.bar"
     case .heatmap: "keyboard"
     case .launcher: "command.square"
     }
@@ -45,7 +37,6 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
 
   @MainActor @ViewBuilder func viewForPage() -> some View {
     switch self {
-    case .dashboard: DashboardView()
     case .heatmap: HeatmapView()
     case .launcher: LauncherView()
     }

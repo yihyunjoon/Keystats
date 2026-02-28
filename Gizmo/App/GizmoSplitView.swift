@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct KeystatsSplitView: View {
-  @State private var selectedItem: NavigationItem? = .dashboard
+struct GizmoSplitView: View {
+  @State private var selectedItem: NavigationItem? = .heatmap
 
   var body: some View {
     NavigationSplitView {
@@ -25,5 +25,5 @@ struct KeystatsSplitView: View {
 }
 
 #Preview {
-  KeystatsSplitView()
+  GizmoSplitView()
 }

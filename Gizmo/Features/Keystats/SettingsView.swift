@@ -3,15 +3,11 @@ import SwiftUI
 
 struct SettingsView: View {
   var body: some View {
-    TabView {
-      Tab(String(localized: "General"), systemImage: "gear") {
-        GeneralSettingsView()
-      }
-      Tab(String(localized: "Data"), systemImage: "externaldrive") {
-        DataSettingsView()
-      }
+    VStack(alignment: .leading, spacing: 16) {
+      GeneralSettingsView()
+      DataSettingsView()
     }
-    .frame(width: 380, height: 480)
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 }
 
