@@ -4,6 +4,9 @@
     "%lld" : {
 
     },
+    "Active Display" : {
+      "comment" : "Launcher window placement option for the currently active display."
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -19,6 +22,9 @@
           }
         }
       }
+    },
+    "Choose which display should show the launcher when the global shortcut is pressed." : {
+
     },
     "Clear" : {
       "localizations" : {
@@ -101,6 +107,15 @@
         }
       }
     },
+    "Display Placement" : {
+
+    },
+    "Display With Mouse" : {
+      "comment" : "Launcher window placement option for the display containing the mouse cursor."
+    },
+    "Force English Input Source" : {
+
+    },
     "General" : {
       "localizations" : {
         "en" : {
@@ -171,6 +186,9 @@
         }
       }
     },
+    "Input Source" : {
+
+    },
     "Key" : {
       "localizations" : {
         "en" : {
@@ -192,6 +210,9 @@
     },
     "Launcher" : {
       "comment" : "Title for the Launcher tab, shown in the sidebar."
+    },
+    "Launcher Display" : {
+
     },
     "Launcher Hot Key" : {
 
@@ -266,6 +287,9 @@
         }
       }
     },
+    "Primary Display" : {
+      "comment" : "Launcher window placement option for the primary display."
+    },
     "Quit" : {
 
     },
@@ -333,6 +357,9 @@
       }
     },
     "Type to start searching." : {
+
+    },
+    "When enabled, launcher input uses an English keyboard layout while the launcher is open." : {
 
     }
   },

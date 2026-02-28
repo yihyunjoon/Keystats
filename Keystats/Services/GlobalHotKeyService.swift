@@ -6,18 +6,20 @@ final class GlobalHotKeyService {
   // MARK: - Properties
 
   var onHotKeyPressed: (() -> Void)?
-  private var isConfigured = false
 
   // MARK: - Registration
 
   func configure() {
-    guard !isConfigured else { return }
+    registerHandlers()
+  }
 
+  // MARK: - Private
+
+  private func registerHandlers() {
+    KeyboardShortcuts.removeAllHandlers()
     KeyboardShortcuts.onKeyUp(for: .toggleLauncher) { [weak self] in
       self?.onHotKeyPressed?()
     }
-
-    isConfigured = true
   }
 }
 
