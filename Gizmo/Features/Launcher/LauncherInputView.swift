@@ -14,6 +14,7 @@ struct LauncherInputView: View {
   let onClose: () -> Void
   let onExecuteCommand: (LauncherCommand) -> Result<Void, WindowManagerError>
   let onOpenAccessibilitySettings: () -> Void
+  let onOpenMainWindow: () -> Void
   let matcher: LauncherFuzzyMatcher = LauncherFuzzyMatcher()
   let usageStore: LauncherUsageStore = LauncherUsageStore()
 
@@ -140,6 +141,14 @@ struct LauncherInputView: View {
     .onExitCommand {
       onClose()
     }
+    .onKeyPress(phases: [.down]) { keyPress in
+      guard keyPress.modifiers.contains(.command), keyPress.characters == "," else {
+        return .ignored
+      }
+
+      onOpenMainWindow()
+      return .handled
+    }
     .onKeyPress(.downArrow) {
       moveSelection(by: 1)
       return .handled
@@ -212,6 +221,7 @@ struct LauncherInputView: View {
   LauncherInputView(
     onClose: {},
     onExecuteCommand: { _ in .success(()) },
-    onOpenAccessibilitySettings: {}
+    onOpenAccessibilitySettings: {},
+    onOpenMainWindow: {}
   )
 }

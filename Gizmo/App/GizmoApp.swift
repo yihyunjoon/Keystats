@@ -1,3 +1,4 @@
+import AppKit
 import SwiftData
 import SwiftUI
 
@@ -13,8 +14,13 @@ struct GizmoApp: App {
   var body: some Scene {
     WindowGroup(id: "main") {
       GizmoSplitView()
-        .frame(minWidth: 600, minHeight: 380)
+        .frame(minWidth: 900, minHeight: 550)
         .onKeyPress { _ in .handled }
+        .background {
+          MainWindowOpenActionRegistrar(
+            launcherPanelService: bootstrap.launcherPanelService
+          )
+        }
         .environment(bootstrap.configStore)
         .environment(appEnvironment.permissionService)
         .environment(appEnvironment.monitorService)
@@ -38,7 +44,7 @@ struct GizmoApp: App {
         }
     }
     .modelContainer(bootstrap.sharedModelContainer)
-    .defaultSize(width: 400, height: 600)
+    .defaultSize(width: 900, height: 550)
 
     MenuBarExtra(
       String(localized: "Gizmo"),
@@ -47,5 +53,22 @@ struct GizmoApp: App {
       MenuBarView()
         .environment(bootstrap.configStore)
     }
+  }
+}
+
+private struct MainWindowOpenActionRegistrar: View {
+  @Environment(\.openWindow) private var openWindow
+
+  let launcherPanelService: LauncherPanelService
+
+  var body: some View {
+    Color.clear
+      .frame(width: 0, height: 0)
+      .onAppear {
+        launcherPanelService.onOpenMainWindowRequest = { [openWindow] in
+          openWindow(id: "main")
+          NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+      }
   }
 }

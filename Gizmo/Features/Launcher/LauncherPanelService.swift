@@ -14,6 +14,8 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   private let accessibilityPermissionService: AccessibilityPermissionService
   private let configStore: ConfigStore
 
+  var onOpenMainWindowRequest: (() -> Void)?
+
   private var panel: LauncherPanel?
   private var previousInputSourceID: String?
   private var focusedWindowBeforePanelOpen: AXUIElement?
@@ -124,6 +126,9 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
       },
       onOpenAccessibilitySettings: { [weak self] in
         self?.accessibilityPermissionService.openSystemSettings()
+      },
+      onOpenMainWindow: { [weak self] in
+        self?.openMainWindowFromLauncher()
       }
     )
 
@@ -163,6 +168,37 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   func windowDidResignKey(_ notification: Notification) {
     hidePanel()
+  }
+
+  private func openMainWindowFromLauncher() {
+    hidePanel()
+
+    guard let candidate = existingMainWindow() else {
+      onOpenMainWindowRequest?()
+      return
+    }
+
+    if candidate.isMiniaturized {
+      candidate.deminiaturize(nil)
+    }
+
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    candidate.makeKeyAndOrderFront(nil)
+  }
+
+  private func existingMainWindow() -> NSWindow? {
+    if let orderedCandidate = NSApplication.shared.orderedWindows.first(where: isMainWindowCandidate(_:)) {
+      return orderedCandidate
+    }
+
+    return NSApplication.shared.windows.first(where: isMainWindowCandidate(_:))
+  }
+
+  private func isMainWindowCandidate(_ window: NSWindow) -> Bool {
+    if window === panel { return false }
+    if window is NSPanel { return false }
+
+    return window.isVisible || window.isMiniaturized
   }
 }
 
