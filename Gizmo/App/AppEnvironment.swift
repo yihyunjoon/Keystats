@@ -15,8 +15,8 @@ final class AppEnvironment {
       monitorService ?? KeyboardMonitorService()
   }
 
-  func configureMonitoring(context: ModelContext, shouldAutoStart: Bool) {
-    monitorService.configure(with: context)
+  func configureMonitoring(container: ModelContainer, shouldAutoStart: Bool) {
+    monitorService.configure(with: container)
     applyMonitoringPolicy(shouldAutoStart: shouldAutoStart)
   }
 

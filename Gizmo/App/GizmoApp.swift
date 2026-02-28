@@ -22,7 +22,7 @@ struct GizmoApp: App {
         .environment(bootstrap.windowManagerService)
         .onAppear {
           appEnvironment.configureMonitoring(
-            context: bootstrap.sharedModelContainer.mainContext,
+            container: bootstrap.sharedModelContainer,
             shouldAutoStart: bootstrap.configStore.active.keystats.autoStartMonitoring
           )
         }

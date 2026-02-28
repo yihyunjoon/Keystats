@@ -7,11 +7,18 @@ import SwiftData
 final class KeyboardMonitorService {
   // MARK: - Properties
 
+  private static let batchFlushIntervalNanoseconds: UInt64 = 300_000_000
+  private static let maxPendingPressesBeforeFlush = 30
+
   private(set) var isMonitoring: Bool = false
 
   private var eventTap: CFMachPort?
   private var runLoopSource: CFRunLoopSource?
-  private var modelContext: ModelContext?
+  private var persistenceActor: KeyPressPersistenceActor?
+  private var pendingCounts: [Int: Int] = [:]
+  private var pendingPresses = 0
+  private var flushTask: Task<Void, Never>?
+  private var flushInFlightTask: Task<Void, Never>?
 
   // Singleton for C callback access
   private static var shared: KeyboardMonitorService?
@@ -24,15 +31,15 @@ final class KeyboardMonitorService {
 
   // MARK: - Configuration
 
-  func configure(with modelContext: ModelContext) {
-    self.modelContext = modelContext
+  func configure(with modelContainer: ModelContainer) {
+    persistenceActor = KeyPressPersistenceActor(container: modelContainer)
   }
 
   // MARK: - Monitoring Control
 
   func startMonitoring() -> Bool {
     guard !isMonitoring else { return true }
-    guard modelContext != nil else { return false }
+    guard persistenceActor != nil else { return false }
 
     let eventMask = (1 << CGEventType.keyDown.rawValue)
 
@@ -68,6 +75,10 @@ final class KeyboardMonitorService {
 
   func stopMonitoring() {
     guard isMonitoring else { return }
+
+    flushTask?.cancel()
+    flushTask = nil
+    flushPendingCounts()
 
     if let tap = eventTap {
       CGEvent.tapEnable(tap: tap, enable: false)
@@ -105,30 +116,85 @@ final class KeyboardMonitorService {
   // MARK: - Record Key Press
 
   private func recordKeyPress(keyCode: Int) {
-    guard let context = modelContext else { return }
+    pendingCounts[keyCode, default: 0] += 1
+    pendingPresses += 1
 
-    let keyName = KeyCodeMapping.name(for: keyCode)
+    if pendingPresses >= Self.maxPendingPressesBeforeFlush {
+      flushTask?.cancel()
+      flushTask = nil
+      flushPendingCounts()
+      return
+    }
 
-    let descriptor = FetchDescriptor<KeyPressRecord>(
-      predicate: #Predicate { $0.keyCode == keyCode }
-    )
+    scheduleFlushIfNeeded()
+  }
 
-    do {
-      let existingRecords = try context.fetch(descriptor)
+  private func scheduleFlushIfNeeded() {
+    guard flushTask == nil else { return }
 
-      if let record = existingRecords.first {
-        record.incrementCount()
-      } else {
-        let newRecord = KeyPressRecord(
-          keyCode: keyCode,
-          keyName: keyName
+    flushTask = Task { [weak self] in
+      do {
+        try await Task.sleep(
+          nanoseconds: Self.batchFlushIntervalNanoseconds
         )
-        context.insert(newRecord)
+      } catch {
+        return
       }
 
-      try context.save()
-    } catch {
-      print("Failed to record key press: \(error)")
+      await self?.flushPendingCounts()
     }
+  }
+
+  private func flushPendingCounts() {
+    guard flushInFlightTask == nil else { return }
+    guard let persistenceActor else { return }
+    guard !pendingCounts.isEmpty else { return }
+
+    let batchedCounts = pendingCounts
+    let batchedPayload = batchedCounts.map { keyCode, delta in
+      (
+        keyCode: keyCode,
+        keyName: KeyCodeMapping.name(for: keyCode),
+        delta: delta
+      )
+    }
+    pendingCounts.removeAll(keepingCapacity: true)
+    pendingPresses = 0
+    flushTask = nil
+
+    flushInFlightTask = Task { [weak self, persistenceActor] in
+      do {
+        try await persistenceActor.flush(batchedPayload)
+        await self?.handleFlushSuccess()
+      } catch {
+        await self?.handleFlushFailure(error, batchedCounts: batchedCounts)
+      }
+    }
+  }
+
+  private func handleFlushSuccess() {
+    flushInFlightTask = nil
+
+    guard !pendingCounts.isEmpty else { return }
+
+    if pendingPresses >= Self.maxPendingPressesBeforeFlush {
+      flushPendingCounts()
+    } else {
+      scheduleFlushIfNeeded()
+    }
+  }
+
+  private func handleFlushFailure(
+    _ error: Error,
+    batchedCounts: [Int: Int]
+  ) {
+    print("Failed to flush key presses: \(error)")
+
+    flushInFlightTask = nil
+    for (keyCode, delta) in batchedCounts {
+      pendingCounts[keyCode, default: 0] += delta
+      pendingPresses += delta
+    }
+    scheduleFlushIfNeeded()
   }
 }
