@@ -1,0 +1,15 @@
+# Gizmo config file
+# Location: $XDG_CONFIG_HOME/gizmo/config.toml (fallback: ~/.config/gizmo/config.toml)
+
+config-version = 1
+
+[launcher]
+display = "active_window" # primary | mouse | active_window
+force_english_input_source = false
+
+[launcher.global_hotkey]
+key = "space"
+modifiers = ["command", "shift"] # command | shift | option | control | function
+
+[keystats]
+auto_start_monitoring = true

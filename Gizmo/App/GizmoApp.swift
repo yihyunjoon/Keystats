@@ -15,17 +15,26 @@ struct GizmoApp: App {
       GizmoSplitView()
         .frame(minWidth: 600, minHeight: 380)
         .onKeyPress { _ in .handled }
+        .environment(bootstrap.configStore)
         .environment(appEnvironment.permissionService)
         .environment(appEnvironment.monitorService)
         .environment(bootstrap.accessibilityPermissionService)
         .environment(bootstrap.windowManagerService)
         .onAppear {
           appEnvironment.configureMonitoring(
-            context: bootstrap.sharedModelContainer.mainContext
+            context: bootstrap.sharedModelContainer.mainContext,
+            shouldAutoStart: bootstrap.configStore.active.keystats.autoStartMonitoring
           )
         }
+        .onChange(of: bootstrap.configStore.active.keystats.autoStartMonitoring) {
+          _, shouldAutoStart in
+          appEnvironment.applyMonitoringPolicy(shouldAutoStart: shouldAutoStart)
+        }
         .onChange(of: appEnvironment.permissionService.isGranted) { _, isGranted in
-          appEnvironment.handlePermissionChange(isGranted)
+          appEnvironment.handlePermissionChange(
+            isGranted,
+            shouldAutoStart: bootstrap.configStore.active.keystats.autoStartMonitoring
+          )
         }
     }
     .modelContainer(bootstrap.sharedModelContainer)
@@ -36,6 +45,7 @@ struct GizmoApp: App {
       systemImage: "keyboard"
     ) {
       MenuBarView()
+        .environment(bootstrap.configStore)
     }
   }
 }

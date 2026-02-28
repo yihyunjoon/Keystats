@@ -15,15 +15,23 @@ final class AppEnvironment {
       monitorService ?? KeyboardMonitorService()
   }
 
-  func configureMonitoring(context: ModelContext) {
+  func configureMonitoring(context: ModelContext, shouldAutoStart: Bool) {
     monitorService.configure(with: context)
-
-    if permissionService.isGranted {
-      _ = monitorService.startMonitoring()
-    }
+    applyMonitoringPolicy(shouldAutoStart: shouldAutoStart)
   }
 
-  func handlePermissionChange(_ isGranted: Bool) {
+  func applyMonitoringPolicy(shouldAutoStart: Bool) {
+    guard shouldAutoStart else {
+      monitorService.stopMonitoring()
+      return
+    }
+
+    guard permissionService.isGranted else { return }
+    _ = monitorService.startMonitoring()
+  }
+
+  func handlePermissionChange(_ isGranted: Bool, shouldAutoStart: Bool) {
+    guard shouldAutoStart else { return }
     guard isGranted else { return }
     _ = monitorService.startMonitoring()
   }

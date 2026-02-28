@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
   @Environment(\.openWindow) private var openWindow
+  @Environment(ConfigStore.self) private var configStore
 
   var body: some View {
     Button(String(localized: "Open Gizmo")) {
@@ -9,6 +10,11 @@ struct MenuBarView: View {
       NSApplication.shared.activate(ignoringOtherApps: true)
     }
     .keyboardShortcut("o")
+
+    Button(String(localized: "Reload Config")) {
+      _ = configStore.reload()
+    }
+    .keyboardShortcut("r")
 
     Divider()
 
@@ -21,4 +27,5 @@ struct MenuBarView: View {
 
 #Preview {
   MenuBarView()
+    .environment(ConfigStore())
 }

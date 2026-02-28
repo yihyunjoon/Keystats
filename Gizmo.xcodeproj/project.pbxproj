@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CFBE20072F02538D007C8C33 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = CFBE20092F02538D007C8C33 /* KeyboardShortcuts */; };
+		D1E9AA012F4E000100000001 /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = D1E9AA032F4E000100000001 /* TOMLKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CFBE20072F02538D007C8C33 /* KeyboardShortcuts in Frameworks */,
+				D1E9AA012F4E000100000001 /* TOMLKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = Gizmo;
 			packageProductDependencies = (
 				CFBE20092F02538D007C8C33 /* KeyboardShortcuts */,
+				D1E9AA032F4E000100000001 /* TOMLKit */,
 			);
 			productName = Gizmo;
 			productReference = CFBE1FF92F02538C007C8C33 /* Gizmo.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CFBE20082F02538D007C8C33 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				D1E9AA022F4E000100000001 /* XCRemoteSwiftPackageReference "TOMLKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CFBE1FFA2F02538C007C8C33 /* Products */;
@@ -355,6 +359,14 @@
 				minimumVersion = 1.9.4;
 			};
 		};
+		D1E9AA022F4E000100000001 /* XCRemoteSwiftPackageReference "TOMLKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LebJe/TOMLKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.5;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -362,6 +374,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CFBE20082F02538D007C8C33 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		D1E9AA032F4E000100000001 /* TOMLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1E9AA022F4E000100000001 /* XCRemoteSwiftPackageReference "TOMLKit" */;
+			productName = TOMLKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

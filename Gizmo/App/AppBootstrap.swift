@@ -2,6 +2,7 @@ import SwiftData
 
 @MainActor
 struct AppBootstrap {
+  let configStore: ConfigStore
   let hotKeyService: GlobalHotKeyService
   let accessibilityPermissionService: AccessibilityPermissionService
   let windowManagerService: WindowManagerService
@@ -9,6 +10,9 @@ struct AppBootstrap {
   let sharedModelContainer: ModelContainer
 
   init() {
+    let configStore = ConfigStore()
+    configStore.bootstrapAndLoad()
+
     let hotKeyService = GlobalHotKeyService()
     let accessibilityPermissionService = AccessibilityPermissionService()
     let windowManagerService = WindowManagerService(
@@ -16,7 +20,8 @@ struct AppBootstrap {
     )
     let launcherPanelService = LauncherPanelService(
       windowManagerService: windowManagerService,
-      accessibilityPermissionService: accessibilityPermissionService
+      accessibilityPermissionService: accessibilityPermissionService,
+      configStore: configStore
     )
 
     hotKeyService.onHotKeyPressed = {
@@ -24,8 +29,16 @@ struct AppBootstrap {
         launcherPanelService.togglePanel()
       }
     }
-    hotKeyService.configure()
+    hotKeyService.configure(
+      shortcut: configStore.active.launcher.globalHotkey.keyboardShortcut
+    )
+    configStore.onConfigDidLoad = { config in
+      hotKeyService.configure(
+        shortcut: config.launcher.globalHotkey.keyboardShortcut
+      )
+    }
 
+    self.configStore = configStore
     self.hotKeyService = hotKeyService
     self.accessibilityPermissionService = accessibilityPermissionService
     self.windowManagerService = windowManagerService

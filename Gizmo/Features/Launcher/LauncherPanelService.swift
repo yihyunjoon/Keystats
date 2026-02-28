@@ -7,6 +7,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   private let windowManagerService: WindowManagerService
   private let accessibilityPermissionService: AccessibilityPermissionService
+  private let configStore: ConfigStore
 
   private var panel: LauncherPanel?
   private var previousInputSourceID: String?
@@ -16,10 +17,12 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   init(
     windowManagerService: WindowManagerService,
-    accessibilityPermissionService: AccessibilityPermissionService
+    accessibilityPermissionService: AccessibilityPermissionService,
+    configStore: ConfigStore
   ) {
     self.windowManagerService = windowManagerService
     self.accessibilityPermissionService = accessibilityPermissionService
+    self.configStore = configStore
     super.init()
   }
 
@@ -60,7 +63,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   // MARK: - Private
 
   private func activateEnglishInputSourceIfNeeded() {
-    guard UserDefaults.standard.bool(forKey: LauncherPreferenceKey.forceEnglishInputSource) else {
+    guard configStore.active.launcher.forceEnglishInputSource else {
       previousInputSourceID = nil
       return
     }
@@ -75,7 +78,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   }
 
   private func positionPanelOnActiveScreen(_ panel: NSPanel) {
-    let screenPreference = LauncherScreenPreference.current
+    let screenPreference = configStore.active.launcher.display
     let targetScreen =
       screenPreference.targetScreen
       ?? NSScreen.main
@@ -161,47 +164,7 @@ extension Notification.Name {
   static let launcherPanelDidOpen = Notification.Name("launcherPanelDidOpen")
 }
 
-enum LauncherScreenPreference: String, CaseIterable, Identifiable {
-  case primary
-  case mouse
-  case activeWindow
-
-  static let userDefaultsKey = LauncherPreferenceKey.screenPlacement
-  static let defaultValue: LauncherScreenPreference = .activeWindow
-
-  var id: String { rawValue }
-
-  var title: LocalizedStringResource {
-    switch self {
-    case .primary:
-      LocalizedStringResource(
-        "Primary Display",
-        comment: "Launcher window placement option for the primary display."
-      )
-    case .mouse:
-      LocalizedStringResource(
-        "Display With Mouse",
-        comment: "Launcher window placement option for the display containing the mouse cursor."
-      )
-    case .activeWindow:
-      LocalizedStringResource(
-        "Active Display",
-        comment: "Launcher window placement option for the currently active display."
-      )
-    }
-  }
-
-  static var current: LauncherScreenPreference {
-    guard
-      let rawValue = UserDefaults.standard.string(forKey: userDefaultsKey),
-      let value = LauncherScreenPreference(rawValue: rawValue)
-    else {
-      return defaultValue
-    }
-
-    return value
-  }
-
+extension LauncherDisplay {
   var targetScreen: NSScreen? {
     switch self {
     case .primary:
@@ -213,9 +176,4 @@ enum LauncherScreenPreference: String, CaseIterable, Identifiable {
       return NSScreen.main
     }
   }
-}
-
-enum LauncherPreferenceKey {
-  static let screenPlacement = "launcherScreenPreference"
-  static let forceEnglishInputSource = "launcherForceEnglishInputSource"
 }

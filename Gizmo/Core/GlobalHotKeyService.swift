@@ -9,7 +9,8 @@ final class GlobalHotKeyService {
 
   // MARK: - Registration
 
-  func configure() {
+  func configure(shortcut: KeyboardShortcuts.Shortcut?) {
+    KeyboardShortcuts.setShortcut(shortcut, for: .toggleLauncher)
     registerHandlers()
   }
 

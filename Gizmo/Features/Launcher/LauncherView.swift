@@ -1,25 +1,20 @@
-import KeyboardShortcuts
 import SwiftUI
 
 struct LauncherView: View {
-  @AppStorage(LauncherScreenPreference.userDefaultsKey)
-  private var launcherScreenPreferenceRawValue: String =
-    LauncherScreenPreference.defaultValue.rawValue
-  @AppStorage(LauncherPreferenceKey.forceEnglishInputSource)
-  private var forceEnglishInputSource = false
+  @Environment(ConfigStore.self) private var configStore
 
   var body: some View {
     Form {
       Section {
-        KeyboardShortcuts.Recorder(
+        LabeledContent(
           String(localized: "Launcher Hot Key"),
-          name: .toggleLauncher
+          value: configStore.active.launcher.globalHotkey.descriptionText
         )
 
         Text(
           String(
             localized:
-              "Set a global shortcut to open or close the launcher input window."
+              "Set the launcher hot key in config.toml and press Reload Config."
           )
         )
         .foregroundStyle(.secondary)
@@ -29,16 +24,10 @@ struct LauncherView: View {
       }
 
       Section {
-        Picker(
+        LabeledContent(
           String(localized: "Launcher Display"),
-          selection: $launcherScreenPreferenceRawValue
-        ) {
-          ForEach(LauncherScreenPreference.allCases) { option in
-            Text(option.title)
-              .tag(option.rawValue)
-          }
-        }
-        .pickerStyle(.menu)
+          value: configStore.active.launcher.display.titleText
+        )
 
         Text(
           String(
@@ -53,9 +42,11 @@ struct LauncherView: View {
       }
 
       Section {
-        Toggle(
+        LabeledContent(
           String(localized: "Force English Input Source"),
-          isOn: $forceEnglishInputSource
+          value: configStore.active.launcher.forceEnglishInputSource
+            ? String(localized: "Enabled")
+            : String(localized: "Disabled")
         )
 
         Text(
@@ -69,20 +60,56 @@ struct LauncherView: View {
       } header: {
         Text(String(localized: "Input Source"))
       }
+
+      Section {
+        LabeledContent(String(localized: "Path"), value: configStore.configURL.path())
+          .lineLimit(2)
+
+        HStack(spacing: 8) {
+          Button(String(localized: "Open Config")) {
+            configStore.openConfigFile()
+          }
+          .buttonStyle(.bordered)
+
+          Button(String(localized: "Reveal Config")) {
+            configStore.revealConfigFile()
+          }
+          .buttonStyle(.bordered)
+
+          Button(String(localized: "Reload Config")) {
+            _ = configStore.reload()
+          }
+          .buttonStyle(.borderedProminent)
+        }
+
+        if let error = configStore.lastLoadError {
+          Text(error)
+            .foregroundStyle(.red)
+            .font(.footnote)
+            .textSelection(.enabled)
+        }
+      } header: {
+        Text(String(localized: "Config File"))
+      }
     }
     .formStyle(.grouped)
-    .onAppear {
-      guard
-        LauncherScreenPreference(rawValue: launcherScreenPreferenceRawValue) == nil
-      else {
-        return
-      }
+  }
+}
 
-      launcherScreenPreferenceRawValue = LauncherScreenPreference.defaultValue.rawValue
+private extension LauncherDisplay {
+  var titleText: String {
+    switch self {
+    case .primary:
+      return String(localized: "Primary Display")
+    case .mouse:
+      return String(localized: "Display With Mouse")
+    case .activeWindow:
+      return String(localized: "Active Display")
     }
   }
 }
 
 #Preview {
   LauncherView()
+    .environment(ConfigStore())
 }

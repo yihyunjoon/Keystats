@@ -90,6 +90,9 @@
         }
       }
     },
+    "Config File" : {
+
+    },
     "Count" : {
       "localizations" : {
         "en" : {
@@ -122,11 +125,17 @@
         }
       }
     },
+    "Disabled" : {
+
+    },
     "Display Placement" : {
 
     },
     "Display With Mouse" : {
       "comment" : "Launcher window placement option for the display containing the mouse cursor."
+    },
+    "Enabled" : {
+
     },
     "Executed: %@" : {
 
@@ -319,6 +328,9 @@
         }
       }
     },
+    "Open Config" : {
+
+    },
     "Open Gizmo" : {
 
     },
@@ -337,6 +349,9 @@
           }
         }
       }
+    },
+    "Path" : {
+
     },
     "Permission Granted" : {
       "localizations" : {
@@ -376,6 +391,9 @@
     "Quit" : {
 
     },
+    "Reload Config" : {
+
+    },
     "Reset" : {
       "localizations" : {
         "en" : {
@@ -391,6 +409,9 @@
           }
         }
       }
+    },
+    "Reveal Config" : {
+
     },
     "Search apps, files, and commands" : {
 
@@ -411,7 +432,7 @@
         }
       }
     },
-    "Set a global shortcut to open or close the launcher input window." : {
+    "Set the launcher hot key in config.toml and press Reload Config." : {
 
     },
     "Start typing to see your keyboard heatmap." : {
