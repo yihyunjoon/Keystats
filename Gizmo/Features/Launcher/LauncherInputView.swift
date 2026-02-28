@@ -14,6 +14,8 @@ struct LauncherInputView: View {
   let onClose: () -> Void
   let onExecuteCommand: (LauncherCommand) -> Result<Void, WindowManagerError>
   let onOpenAccessibilitySettings: () -> Void
+  let matcher: LauncherFuzzyMatcher = LauncherFuzzyMatcher()
+  let usageStore: LauncherUsageStore = LauncherUsageStore()
 
   @State private var query: String = ""
   @State private var selectedCommandIndex: Int = 0
@@ -23,21 +25,16 @@ struct LauncherInputView: View {
 
   private let commands = LauncherCommand.all
 
-  private var filteredCommands: [LauncherCommand] {
-    let normalizedQuery = query
-      .lowercased()
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-    let tokens = normalizedQuery.split(whereSeparator: \.isWhitespace)
+  private var rankedCommands: [LauncherMatchResult] {
+    matcher.rank(
+      commands: commands,
+      query: query,
+      usageStore: usageStore
+    )
+  }
 
-    guard !tokens.isEmpty else { return commands }
-
-    return commands.filter { command in
-      let haystack = ([command.title] + command.keywords)
-        .joined(separator: " ")
-        .lowercased()
-
-      return tokens.allSatisfy { haystack.contains($0) }
-    }
+  private var displayedCommands: [LauncherCommand] {
+    rankedCommands.map(\.command)
   }
 
   private var visibleRows: Int {
@@ -45,7 +42,7 @@ struct LauncherInputView: View {
       executionError == nil
       ? Layout.maxVisibleRows
       : Layout.maxVisibleRowsWhenError
-    return min(filteredCommands.count, maxRows)
+    return min(displayedCommands.count, maxRows)
   }
 
   private var commandListHeight: CGFloat {
@@ -81,14 +78,14 @@ struct LauncherInputView: View {
 
       Divider()
 
-      if filteredCommands.isEmpty {
+      if displayedCommands.isEmpty {
         Text(String(localized: "No matching commands."))
           .font(.system(size: 13, weight: .regular, design: .rounded))
           .foregroundStyle(.secondary)
       } else {
         ScrollView {
           LazyVStack(alignment: .leading, spacing: Layout.rowSpacing) {
-            ForEach(Array(filteredCommands.enumerated()), id: \.element.id) {
+            ForEach(Array(displayedCommands.enumerated()), id: \.element.id) {
               index, command in
               commandRow(
                 title: command.title,
@@ -181,13 +178,14 @@ struct LauncherInputView: View {
   }
 
   private func executeSelectedCommand() {
-    guard !filteredCommands.isEmpty else { return }
+    guard !displayedCommands.isEmpty else { return }
 
-    let index = max(0, min(selectedCommandIndex, filteredCommands.count - 1))
-    let command = filteredCommands[index]
+    let index = max(0, min(selectedCommandIndex, displayedCommands.count - 1))
+    let command = displayedCommands[index]
 
     switch onExecuteCommand(command) {
     case .success:
+      usageStore.recordExecution(commandID: command.id)
       executionError = nil
       onClose()
     case .failure(let error):
@@ -196,9 +194,9 @@ struct LauncherInputView: View {
   }
 
   private func moveSelection(by delta: Int) {
-    guard !filteredCommands.isEmpty else { return }
+    guard !displayedCommands.isEmpty else { return }
 
-    let count = filteredCommands.count
+    let count = displayedCommands.count
     let nextIndex = (selectedCommandIndex + delta + count) % count
     selectedCommandIndex = nextIndex
   }
