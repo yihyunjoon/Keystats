@@ -117,6 +117,9 @@
         }
       }
     },
+    "Global Shortcut" : {
+
+    },
     "Grant Access" : {
       "localizations" : {
         "en" : {
@@ -185,6 +188,12 @@
       }
     },
     "Keystats" : {
+
+    },
+    "Launcher" : {
+      "comment" : "Title for the Launcher tab, shown in the sidebar."
+    },
+    "Launcher Hot Key" : {
 
     },
     "Monitoring" : {
@@ -276,6 +285,9 @@
         }
       }
     },
+    "Search apps, files, and commands" : {
+
+    },
     "Select an item" : {
       "localizations" : {
         "en" : {
@@ -291,6 +303,9 @@
           }
         }
       }
+    },
+    "Set a global shortcut to open or close the launcher input window." : {
+
     },
     "Settings..." : {
 
@@ -316,6 +331,9 @@
           }
         }
       }
+    },
+    "Type to start searching." : {
+
     }
   },
   "version" : "1.1"

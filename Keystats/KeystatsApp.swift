@@ -5,6 +5,23 @@ import SwiftUI
 struct KeystatsApp: App {
   @State private var permissionService = InputMonitoringPermissionService()
   @State private var monitorService = KeyboardMonitorService()
+  private let hotKeyService: GlobalHotKeyService
+  private let launcherPanelService: LauncherPanelService
+
+  init() {
+    let hotKeyService = GlobalHotKeyService()
+    let launcherPanelService = LauncherPanelService()
+
+    hotKeyService.onHotKeyPressed = {
+      Task { @MainActor in
+        launcherPanelService.togglePanel()
+      }
+    }
+    hotKeyService.configure()
+
+    self.hotKeyService = hotKeyService
+    self.launcherPanelService = launcherPanelService
+  }
 
   var sharedModelContainer: ModelContainer = {
     let schema = Schema([KeyPressRecord.self])
