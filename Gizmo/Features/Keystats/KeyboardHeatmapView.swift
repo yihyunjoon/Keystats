@@ -2,9 +2,33 @@ import SwiftUI
 
 struct KeyboardHeatmapView: View {
   let records: [KeyPressRecord]
+  private let targetPanelWidth: CGFloat = 560
 
   private var maxCount: Int {
     records.map(\.count).max() ?? 1
+  }
+
+  private var keyboardWidth: CGFloat {
+    KeyboardLayoutData.rows.map { row in
+      let keyWidths = row.reduce(CGFloat.zero) { partialResult, key in
+        partialResult + KeyboardLayoutData.baseKeySize * key.width
+      }
+      let spacings = CGFloat(max(row.count - 1, 0)) * KeyboardLayoutData.keySpacing
+      return keyWidths + spacings
+    }
+    .max() ?? 0
+  }
+
+  private var keyboardHeight: CGFloat {
+    let rowCount = KeyboardLayoutData.rows.count
+    let rowHeights = CGFloat(rowCount) * KeyboardLayoutData.baseKeySize
+    let spacings = CGFloat(max(rowCount - 1, 0)) * KeyboardLayoutData.keySpacing
+    return rowHeights + spacings
+  }
+
+  private var keyboardScale: CGFloat {
+    guard keyboardWidth > 0 else { return 1 }
+    return min(1, targetPanelWidth / keyboardWidth)
   }
 
   private func count(for keyCode: Int) -> Int {
@@ -16,6 +40,23 @@ struct KeyboardHeatmapView: View {
     return Double(count(for: keyCode)) / Double(maxCount)
   }
 
+  private var keyboardGrid: some View {
+    VStack(alignment: .center, spacing: KeyboardLayoutData.keySpacing) {
+      ForEach(Array(KeyboardLayoutData.rows.enumerated()), id: \.offset) { _, row in
+        HStack(spacing: KeyboardLayoutData.keySpacing) {
+          ForEach(Array(row.enumerated()), id: \.offset) { _, key in
+            KeyView(
+              keyCode: key.keyCode,
+              width: key.width,
+              count: count(for: key.keyCode),
+              intensity: intensity(for: key.keyCode)
+            )
+          }
+        }
+      }
+    }
+  }
+
   var body: some View {
     if records.isEmpty {
       ContentUnavailableView(
@@ -24,21 +65,15 @@ struct KeyboardHeatmapView: View {
         description: Text(String(localized: "Start typing to see your keyboard heatmap."))
       )
     } else {
-      VStack(alignment: .center, spacing: KeyboardLayoutData.keySpacing) {
-        ForEach(Array(KeyboardLayoutData.rows.enumerated()), id: \.offset) { _, row in
-          HStack(spacing: KeyboardLayoutData.keySpacing) {
-            ForEach(Array(row.enumerated()), id: \.offset) { _, key in
-              KeyView(
-                keyCode: key.keyCode,
-                width: key.width,
-                count: count(for: key.keyCode),
-                intensity: intensity(for: key.keyCode)
-              )
-            }
-          }
-        }
-      }
+      keyboardGrid
+        .scaleEffect(keyboardScale, anchor: .topLeading)
+        .frame(
+          width: keyboardWidth * keyboardScale,
+          height: keyboardHeight * keyboardScale,
+          alignment: .topLeading
+        )
       .padding()
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
   }
 }

@@ -55,6 +55,9 @@
         }
       }
     },
+    "Chart" : {
+
+    },
     "Choose which display should show the launcher when the global shortcut is pressed." : {
 
     },
@@ -435,6 +438,9 @@
     "Set the launcher hot key in config.toml and press Reload Config." : {
 
     },
+    "Showing top %lld keys by press count." : {
+
+    },
     "Start typing to see your keyboard heatmap." : {
 
     },
@@ -520,6 +526,9 @@
           }
         }
       }
+    },
+    "View" : {
+
     },
     "When enabled, launcher input uses an English keyboard layout while the launcher is open." : {
 
