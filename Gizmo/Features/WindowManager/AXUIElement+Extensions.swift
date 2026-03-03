@@ -20,6 +20,7 @@ extension AXValue {
 
 extension AXUIElement {
   static let systemWide = AXUIElementCreateSystemWide()
+  private static let enhancedUserInterfaceAttribute = "AXEnhancedUserInterface" as CFString
 
   fileprivate func attributeValue(_ attribute: CFString) -> AnyObject? {
     var value: CFTypeRef?
@@ -68,23 +69,26 @@ extension AXUIElement {
 
   @discardableResult
   func setFrame(_ frame: CGRect) -> Bool {
-    let didSetSizeInitially = setWrappedValue(
-      kAXSizeAttribute as CFString,
-      value: frame.size,
-      type: .cgSize
-    )
-    let didSetPosition = setWrappedValue(
-      kAXPositionAttribute as CFString,
-      value: frame.origin,
-      type: .cgPoint
-    )
-    let didSetSizeFinally = setWrappedValue(
-      kAXSizeAttribute as CFString,
-      value: frame.size,
-      type: .cgSize
-    )
+    withAnimationsDisabledIfPossible {
+      // Keep size -> position -> size order for better cross-app stability.
+      let didSetSizeInitially = setWrappedValue(
+        kAXSizeAttribute as CFString,
+        value: frame.size,
+        type: .cgSize
+      )
+      let didSetPosition = setWrappedValue(
+        kAXPositionAttribute as CFString,
+        value: frame.origin,
+        type: .cgPoint
+      )
+      let didSetSizeFinally = setWrappedValue(
+        kAXSizeAttribute as CFString,
+        value: frame.size,
+        type: .cgSize
+      )
 
-    return didSetSizeInitially && didSetPosition && didSetSizeFinally
+      return didSetSizeInitially && didSetPosition && didSetSizeFinally
+    }
   }
 
   static func focusedWindowElement() -> AXUIElement? {
@@ -116,5 +120,41 @@ extension AXUIElement {
     }
 
     return windows.first
+  }
+
+  private func withAnimationsDisabledIfPossible<T>(_ body: () -> T) -> T {
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(self, &pid) == .success else {
+      return body()
+    }
+
+    let appElement = AXUIElementCreateApplication(pid)
+    var rawValue: CFTypeRef?
+    let readResult = AXUIElementCopyAttributeValue(
+      appElement,
+      Self.enhancedUserInterfaceAttribute,
+      &rawValue
+    )
+
+    let wasEnabled = (rawValue as? Bool) == true
+    if readResult == .success && wasEnabled {
+      _ = AXUIElementSetAttributeValue(
+        appElement,
+        Self.enhancedUserInterfaceAttribute,
+        kCFBooleanFalse
+      )
+    }
+
+    defer {
+      if readResult == .success && wasEnabled {
+        _ = AXUIElementSetAttributeValue(
+          appElement,
+          Self.enhancedUserInterfaceAttribute,
+          kCFBooleanTrue
+        )
+      }
+    }
+
+    return body()
   }
 }

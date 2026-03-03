@@ -58,6 +58,9 @@
     "All Displays" : {
 
     },
+    "All regular app windows are automatically managed in the current workspace." : {
+
+    },
     "Assign a shortcut per command. Assigned shortcuts work globally while Gizmo is running." : {
 
     },
@@ -443,9 +446,6 @@
     "offscreen" : {
 
     },
-    "Only windows moved via workspace commands become managed windows." : {
-
-    },
     "onscreen" : {
 
     },
@@ -636,6 +636,9 @@
     "Switch to Workspace %@" : {
 
     },
+    "Switching back restores managed windows to their saved frames." : {
+
+    },
     "Test Commands" : {
       "localizations" : {
         "en" : {
@@ -713,9 +716,6 @@
 
     },
     "Unknown Window" : {
-
-    },
-    "Unmanaged windows stay visible across all workspaces." : {
 
     },
     "View" : {

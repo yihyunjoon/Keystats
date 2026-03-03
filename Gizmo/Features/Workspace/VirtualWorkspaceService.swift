@@ -102,6 +102,7 @@ struct VirtualWorkspaceDebugSnapshot: Equatable {
 protocol WorkspaceWindowDriver {
   @MainActor func isAccessibilityGranted() -> Bool
   @MainActor func resolveFocusedWindow(preferredWindow: AXUIElement?) -> ManagedWindowRef?
+  @MainActor func allManageableWindows() -> [ManagedWindowRef]
   @MainActor func frame(for window: ManagedWindowRef) -> CGRect?
   @MainActor func setFrame(_ frame: CGRect, for window: ManagedWindowRef) -> Bool
   @MainActor func isWindowAlive(_ window: ManagedWindowRef) -> Bool
@@ -136,6 +137,30 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
     return isWindowAlive(focusedRef) ? focusedRef : nil
   }
 
+  func allManageableWindows() -> [ManagedWindowRef] {
+    let currentPID = ProcessInfo.processInfo.processIdentifier
+    let candidateWindowNumbers = currentWindowNumbers(excludingPID: currentPID)
+    var mapped: [WindowKey: ManagedWindowRef] = [:]
+
+    for app in NSWorkspace.shared.runningApplications {
+      guard app.processIdentifier != currentPID else { continue }
+      guard app.activationPolicy == .regular else { continue }
+
+      let appElement = AXUIElementCreateApplication(app.processIdentifier)
+      guard let appWindows = axWindows(for: appElement) else { continue }
+
+      for windowElement in appWindows {
+        let windowRef = makeManagedWindowRef(from: windowElement)
+        guard isManageable(windowRef, candidateWindowNumbers: candidateWindowNumbers) else {
+          continue
+        }
+        mapped[windowRef.key] = windowRef
+      }
+    }
+
+    return Array(mapped.values)
+  }
+
   func frame(for window: ManagedWindowRef) -> CGRect? {
     guard let element = window.element else { return nil }
     guard let frame = element.frame, !frame.isNull else { return nil }
@@ -153,6 +178,69 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
 
   func singleMonitorVisibleFrame() -> CGRect? {
     (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame
+  }
+
+  private func currentWindowNumbers(excludingPID excludedPID: pid_t) -> Set<Int> {
+    let options: CGWindowListOption = [.excludeDesktopElements]
+    guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]]
+    else {
+      return []
+    }
+
+    var numbers: Set<Int> = []
+    for window in windows {
+      let layer = intValue(for: "kCGWindowLayer", in: window)
+      guard layer == 0 else { continue }
+
+      let ownerPID = pid_t(intValue(for: "kCGWindowOwnerPID", in: window))
+      guard ownerPID != excludedPID else { continue }
+
+      let number = intValue(for: "kCGWindowNumber", in: window)
+      guard number > 0 else { continue }
+
+      numbers.insert(number)
+    }
+
+    return numbers
+  }
+
+  private func axWindows(for appElement: AXUIElement) -> [AXUIElement]? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &value) == .success
+    else {
+      return nil
+    }
+
+    return value as? [AXUIElement]
+  }
+
+  private func isManageable(
+    _ window: ManagedWindowRef,
+    candidateWindowNumbers: Set<Int>
+  ) -> Bool {
+    guard let frame = frame(for: window), !frame.isNull else {
+      return false
+    }
+    guard frame.width >= 1, frame.height >= 1 else {
+      return false
+    }
+
+    if let windowNumber = windowNumber(from: window.key) {
+      return candidateWindowNumbers.contains(windowNumber)
+    }
+
+    return true
+  }
+
+  private func windowNumber(from key: WindowKey) -> Int? {
+    guard key.hasPrefix("axwn:") else { return nil }
+    return Int(key.dropFirst("axwn:".count))
+  }
+
+  private func intValue(for key: String, in dict: [String: Any]) -> Int {
+    if let value = dict[key] as? Int { return value }
+    if let value = dict[key] as? NSNumber { return value.intValue }
+    return 0
   }
 
   private func makeManagedWindowRef(from element: AXUIElement) -> ManagedWindowRef {
@@ -293,6 +381,7 @@ final class VirtualWorkspaceService {
       self.previousWorkspaceName = nil
     }
 
+    synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
     if wasEnabled && !enabled {
@@ -309,6 +398,7 @@ final class VirtualWorkspaceService {
     guard workspaceNames.contains(workspaceName) else { return .failure(.invalidWorkspace) }
     guard driver.isAccessibilityGranted() else { return .failure(.permissionDenied) }
 
+    synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
     guard workspaceName != activeWorkspaceName else { return .success(()) }
@@ -353,6 +443,7 @@ final class VirtualWorkspaceService {
     guard workspaceNames.contains(workspaceName) else { return .failure(.invalidWorkspace) }
     guard driver.isAccessibilityGranted() else { return .failure(.permissionDenied) }
 
+    synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
     guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: preferredWindowElement) else {
@@ -482,6 +573,17 @@ final class VirtualWorkspaceService {
     }
   }
 
+  private func synchronizeManageableWindowsToActiveWorkspace() {
+    guard enabled else { return }
+    guard workspaceNames.contains(activeWorkspaceName) else { return }
+    guard driver.isAccessibilityGranted() else { return }
+
+    let knownKeys = Set(allManagedWindows.map(\.key))
+    for window in driver.allManageableWindows() where !knownKeys.contains(window.key) {
+      Self.appendUnique(window, to: &workspaceWindows[activeWorkspaceName, default: []])
+    }
+  }
+
   private func notifyStateDidChange() {
     onStateDidChange?(state)
   }
@@ -506,11 +608,21 @@ final class VirtualWorkspaceService {
   }
 
   private static func hiddenFrame(for frame: CGRect, in visibleFrame: CGRect) -> CGRect {
-    CGRect(
-      x: visibleFrame.maxX + 2,
-      y: visibleFrame.minY - frame.height - 2,
-      width: max(1, frame.width),
-      height: max(1, frame.height)
+    let width = max(1, frame.width)
+    let height = max(1, frame.height)
+    let hideOnRightSide = frame.midX >= visibleFrame.midX
+
+    let hiddenX = if hideOnRightSide {
+      visibleFrame.maxX - 1
+    } else {
+      visibleFrame.minX - width + 1
+    }
+
+    return CGRect(
+      x: hiddenX,
+      y: visibleFrame.minY - 1,
+      width: width,
+      height: height
     )
   }
 

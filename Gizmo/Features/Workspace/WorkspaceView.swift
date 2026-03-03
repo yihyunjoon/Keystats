@@ -71,9 +71,9 @@ struct WorkspaceView: View {
       }
 
       Section {
-        Text(String(localized: "Only windows moved via workspace commands become managed windows."))
-        Text(String(localized: "Unmanaged windows stay visible across all workspaces."))
+        Text(String(localized: "All regular app windows are automatically managed in the current workspace."))
         Text(String(localized: "Managed windows in inactive workspaces are hidden by moving them off-screen."))
+        Text(String(localized: "Switching back restores managed windows to their saved frames."))
       } header: {
         Text(String(localized: "How Gizmo Workspace Works"))
       }
