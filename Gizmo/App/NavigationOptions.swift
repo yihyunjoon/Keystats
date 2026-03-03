@@ -3,6 +3,7 @@ import SwiftUI
 enum NavigationItem: Equatable, Hashable, Identifiable {
   case heatmap
   case launcher
+  case command
   case customMenubar
   case workspace
   case windowManager
@@ -10,6 +11,7 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
   static let mainPages: [NavigationItem] = [
     .heatmap,
     .launcher,
+    .command,
     .customMenubar,
     .workspace,
     .windowManager
@@ -19,6 +21,7 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
     switch self {
     case .heatmap: return "Heatmap"
     case .launcher: return "Launcher"
+    case .command: return "Command"
     case .customMenubar: return "Custom Menubar"
     case .workspace: return "Workspace"
     case .windowManager: return "WindowManager"
@@ -36,6 +39,11 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
       LocalizedStringResource(
         "Launcher",
         comment: "Title for the Launcher tab, shown in the sidebar."
+      )
+    case .command:
+      LocalizedStringResource(
+        "Command",
+        comment: "Title for the Command tab, shown in the sidebar."
       )
     case .customMenubar:
       LocalizedStringResource(
@@ -59,6 +67,7 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
     switch self {
     case .heatmap: "keyboard"
     case .launcher: "command.square"
+    case .command: "list.bullet.rectangle"
     case .customMenubar: "menubar.dock.rectangle"
     case .workspace: "rectangle.3.group"
     case .windowManager: "rectangle.split.2x1"
@@ -69,6 +78,7 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
     switch self {
     case .heatmap: HeatmapView()
     case .launcher: LauncherView()
+    case .command: CommandView()
     case .customMenubar: CustomMenubarSettingsView()
     case .workspace: WorkspaceView()
     case .windowManager: WindowManagerView()

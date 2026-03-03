@@ -36,6 +36,7 @@ struct GizmoApp: App {
         .environment(bootstrap.accessibilityPermissionService)
         .environment(bootstrap.windowManagerService)
         .environment(bootstrap.virtualWorkspaceService)
+        .environment(bootstrap.commandShortcutService)
         .onAppear {
           appEnvironment.configureMonitoring(
             container: bootstrap.sharedModelContainer,
@@ -54,6 +55,7 @@ struct GizmoApp: App {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
           bootstrap.virtualWorkspaceService.restoreAllWindows()
+          bootstrap.commandShortcutService.stop()
           bootstrap.customMenubarRuntimeService.stop()
         }
     }

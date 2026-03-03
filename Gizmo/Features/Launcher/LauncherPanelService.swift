@@ -10,8 +10,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   // MARK: - Properties
 
-  private let windowManagerService: WindowManagerService
-  private let virtualWorkspaceService: VirtualWorkspaceService
+  private let commandShortcutService: CommandShortcutService
   private let accessibilityPermissionService: AccessibilityPermissionService
   private let configStore: ConfigStore
 
@@ -21,21 +20,17 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   private var panelHostingController: NSHostingController<LauncherInputView>?
   private var previousInputSourceID: String?
   private var focusedWindowBeforePanelOpen: AXUIElement?
-  private var commands: [LauncherCommand]
 
   // MARK: - Initialization
 
   init(
-    windowManagerService: WindowManagerService,
-    virtualWorkspaceService: VirtualWorkspaceService,
+    commandShortcutService: CommandShortcutService,
     accessibilityPermissionService: AccessibilityPermissionService,
     configStore: ConfigStore
   ) {
-    self.windowManagerService = windowManagerService
-    self.virtualWorkspaceService = virtualWorkspaceService
+    self.commandShortcutService = commandShortcutService
     self.accessibilityPermissionService = accessibilityPermissionService
     self.configStore = configStore
-    self.commands = LauncherCommand.makeAll(workspaceNames: virtualWorkspaceService.state.workspaceNames)
     super.init()
   }
 
@@ -76,8 +71,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     )
   }
 
-  func updateWorkspaceCommands(workspaceNames: [String]) {
-    commands = LauncherCommand.makeAll(workspaceNames: workspaceNames)
+  func refreshCommandList() {
     refreshPanelContent()
   }
 
@@ -159,13 +153,20 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   private func makeLauncherInputView() -> LauncherInputView {
     LauncherInputView(
-      commands: commands,
+      commands: commandShortcutService.commands,
       onClose: { [weak self] in
         self?.hidePanel()
       },
       onExecuteCommand: { [weak self] command in
         guard let self else { return .failure(.windowManager(.applyFailed)) }
-        return self.execute(command)
+        let result = self.commandShortcutService.execute(
+          command,
+          preferredWindowElement: self.focusedWindowBeforePanelOpen
+        )
+        if case .success = result {
+          self.focusedWindowBeforePanelOpen = nil
+        }
+        return result
       },
       onOpenAccessibilitySettings: { [weak self] in
         self?.accessibilityPermissionService.openSystemSettings()
@@ -179,63 +180,6 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   private func refreshPanelContent() {
     guard let panelHostingController else { return }
     panelHostingController.rootView = makeLauncherInputView()
-  }
-
-  private func execute(_ command: LauncherCommand) -> Result<Void, LauncherCommandError> {
-    let result: Result<Void, LauncherCommandError>
-
-    switch command.action {
-    case .tile(let tileAction):
-      result = mapWindowManagerResult(
-        windowManagerService.execute(
-          tileAction,
-          preferredWindowElement: focusedWindowBeforePanelOpen
-        )
-      )
-    case .workspaceFocus(let workspaceName):
-      result = mapWorkspaceResult(
-        virtualWorkspaceService.focusWorkspace(workspaceName)
-      )
-    case .workspaceBackAndForth:
-      result = mapWorkspaceResult(
-        virtualWorkspaceService.focusPreviousWorkspace()
-      )
-    case .moveFocusedWindowToWorkspace(let workspaceName):
-      result = mapWorkspaceResult(
-        virtualWorkspaceService.moveFocusedWindowToWorkspace(
-          workspaceName,
-          preferredWindowElement: focusedWindowBeforePanelOpen
-        )
-      )
-    }
-
-    if case .success = result {
-      focusedWindowBeforePanelOpen = nil
-    }
-
-    return result
-  }
-
-  private func mapWindowManagerResult(
-    _ result: Result<Void, WindowManagerError>
-  ) -> Result<Void, LauncherCommandError> {
-    switch result {
-    case .success:
-      return .success(())
-    case .failure(let error):
-      return .failure(.windowManager(error))
-    }
-  }
-
-  private func mapWorkspaceResult(
-    _ result: Result<Void, WorkspaceError>
-  ) -> Result<Void, LauncherCommandError> {
-    switch result {
-    case .success:
-      return .success(())
-    case .failure(let error):
-      return .failure(.workspace(error))
-    }
   }
 
   // MARK: - NSWindowDelegate

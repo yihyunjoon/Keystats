@@ -58,6 +58,9 @@
     "All Displays" : {
 
     },
+    "Assign a shortcut per command. Assigned shortcuts work globally while Gizmo is running." : {
+
+    },
     "Background Opacity" : {
 
     },
@@ -125,6 +128,12 @@
 
     },
     "Clock 24H" : {
+
+    },
+    "Command" : {
+      "comment" : "Title for the Command tab, shown in the sidebar."
+    },
+    "Commands" : {
 
     },
     "Config File" : {
@@ -365,7 +374,13 @@
         }
       }
     },
+    "Move focused window to workspace %@" : {
+
+    },
     "Move Focused Window to Workspace %@" : {
+
+    },
+    "No commands found." : {
 
     },
     "No Data Yet" : {
@@ -468,6 +483,9 @@
     "Outer Top" : {
 
     },
+    "Overview" : {
+
+    },
     "Path" : {
 
     },
@@ -556,7 +574,13 @@
     "Reveal Config" : {
 
     },
+    "Run" : {
+
+    },
     "Search apps, files, and commands" : {
+
+    },
+    "Search commands" : {
 
     },
     "Select an item" : {
@@ -602,6 +626,12 @@
           }
         }
       }
+    },
+    "Switch between current and previous workspace" : {
+
+    },
+    "Switch to workspace %@" : {
+
     },
     "Switch to Workspace %@" : {
 
@@ -676,6 +706,9 @@
     "Top" : {
 
     },
+    "Total Commands" : {
+
+    },
     "Unknown App" : {
 
     },
@@ -719,6 +752,9 @@
           }
         }
       }
+    },
+    "Window tiling command" : {
+
     },
     "Workspace" : {
       "comment" : "Title for the Workspace tab, shown in the sidebar."

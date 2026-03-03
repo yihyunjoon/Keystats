@@ -8,6 +8,7 @@ struct AppBootstrap {
   let accessibilityPermissionService: AccessibilityPermissionService
   let windowManagerService: WindowManagerService
   let virtualWorkspaceService: VirtualWorkspaceService
+  let commandShortcutService: CommandShortcutService
   let launcherPanelService: LauncherPanelService
   let customMenubarRuntimeService: CustomMenubarRuntimeService
   let sharedModelContainer: ModelContainer
@@ -27,21 +28,26 @@ struct AppBootstrap {
       permissionService: accessibilityPermissionService,
       initialConfig: configStore.active.workspace
     )
-    let launcherPanelService = LauncherPanelService(
+    let commandShortcutService = CommandShortcutService(
       windowManagerService: windowManagerService,
       virtualWorkspaceService: virtualWorkspaceService,
+      initialWorkspaceNames: virtualWorkspaceService.state.workspaceNames
+    )
+    let launcherPanelService = LauncherPanelService(
+      commandShortcutService: commandShortcutService,
       accessibilityPermissionService: accessibilityPermissionService,
       configStore: configStore
     )
     let customMenubarRuntimeService = CustomMenubarRuntimeService()
 
     virtualWorkspaceService.onStateDidChange = {
-      [weak customMenubarRuntimeService, weak launcherPanelService] state in
+      [weak customMenubarRuntimeService, weak launcherPanelService, weak commandShortcutService] state in
       customMenubarRuntimeService?.updateWorkspaceState(
         names: state.workspaceNames,
         focusedWorkspaceName: state.activeWorkspaceName
       )
-      launcherPanelService?.updateWorkspaceCommands(workspaceNames: state.workspaceNames)
+      commandShortcutService?.updateWorkspaceCommands(workspaceNames: state.workspaceNames)
+      launcherPanelService?.refreshCommandList()
     }
     customMenubarRuntimeService.setWorkspaceSelectionHandler {
       [weak virtualWorkspaceService] workspaceName in
@@ -68,15 +74,14 @@ struct AppBootstrap {
       names: virtualWorkspaceService.state.workspaceNames,
       focusedWorkspaceName: virtualWorkspaceService.state.activeWorkspaceName
     )
-    launcherPanelService.updateWorkspaceCommands(
-      workspaceNames: virtualWorkspaceService.state.workspaceNames
-    )
+    launcherPanelService.refreshCommandList()
 
     self.configStore = configStore
     self.hotKeyService = hotKeyService
     self.accessibilityPermissionService = accessibilityPermissionService
     self.windowManagerService = windowManagerService
     self.virtualWorkspaceService = virtualWorkspaceService
+    self.commandShortcutService = commandShortcutService
     self.launcherPanelService = launcherPanelService
     self.customMenubarRuntimeService = customMenubarRuntimeService
     self.sharedModelContainer = Self.makeSharedModelContainer()
