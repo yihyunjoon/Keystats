@@ -105,6 +105,7 @@ protocol WorkspaceWindowDriver {
   @MainActor func allManageableWindows() -> [ManagedWindowRef]
   @MainActor func frame(for window: ManagedWindowRef) -> CGRect?
   @MainActor func setFrame(_ frame: CGRect, for window: ManagedWindowRef) -> Bool
+  @MainActor func focus(_ window: ManagedWindowRef) -> Bool
   @MainActor func isWindowAlive(_ window: ManagedWindowRef) -> Bool
   @MainActor func singleMonitorVisibleFrame() -> CGRect?
 }
@@ -170,6 +171,37 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
   func setFrame(_ frame: CGRect, for window: ManagedWindowRef) -> Bool {
     guard let element = window.element else { return false }
     return element.setFrame(frame.screenFlipped)
+  }
+
+  func focus(_ window: ManagedWindowRef) -> Bool {
+    guard let element = window.element else { return false }
+
+    var pid: pid_t = 0
+    let didResolvePID = AXUIElementGetPid(element, &pid) == .success
+    let didActivate = if didResolvePID {
+      NSRunningApplication(processIdentifier: pid)?.activate(
+        options: [.activateAllWindows]
+      ) ?? false
+    } else {
+      false
+    }
+
+    let didRaise = AXUIElementPrformAction(
+      element,
+      kAXRaiseAction as CFString
+    ) == .success
+    let didSetMain = AXUIElementSetAttributeValue(
+      element,
+      kAXMainAttribute as CFString,
+      kCFBooleanTrue
+    ) == .success
+    let didSetFocused = AXUIElementSetAttributeValue(
+      element,
+      kAXFocusedAttribute as CFString,
+      kCFBooleanTrue
+    ) == .success
+
+    return didActivate || didRaise || didSetMain || didSetFocused
   }
 
   func isWindowAlive(_ window: ManagedWindowRef) -> Bool {
@@ -275,8 +307,10 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
       return "axwn:\(windowNumber.intValue)"
     }
 
-    let pointer = Unmanaged.passUnretained(element).toOpaque()
-    return "axptr:\(Int(bitPattern: pointer))"
+    var pid: pid_t = 0
+    _ = AXUIElementGetPid(element, &pid)
+    let elementHash = CFHash(element)
+    return "axel:\(pid):\(elementHash)"
   }
 }
 
@@ -420,6 +454,7 @@ final class VirtualWorkspaceService {
 
     previousWorkspaceName = currentWorkspace
     activeWorkspaceName = workspaceName
+    focusPreferredWindow(in: workspaceName)
     notifyStateDidChange()
 
     return hasApplyFailure ? .failure(.applyFailed) : .success(())
@@ -448,6 +483,12 @@ final class VirtualWorkspaceService {
 
     guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: preferredWindowElement) else {
       return .failure(.noFocusedWindow)
+    }
+    if isSpecialWindow(focusedWindow) {
+      removeWindowFromAllWorkspaces(focusedWindow)
+      savedFrames.removeValue(forKey: focusedWindow.key)
+      notifyStateDidChange()
+      return .success(())
     }
 
     removeWindowFromAllWorkspaces(focusedWindow)
@@ -557,7 +598,7 @@ final class VirtualWorkspaceService {
     for workspaceName in workspaceNames {
       let windows = workspaceWindows[workspaceName, default: []]
       var unique: [WindowKey: ManagedWindowRef] = [:]
-      for window in windows where driver.isWindowAlive(window) {
+      for window in windows where !isSpecialWindow(window) && driver.isWindowAlive(window) {
         unique[window.key] = window
       }
       workspaceWindows[workspaceName] = Array(unique.values)
@@ -579,9 +620,90 @@ final class VirtualWorkspaceService {
     guard driver.isAccessibilityGranted() else { return }
 
     let knownKeys = Set(allManagedWindows.map(\.key))
-    for window in driver.allManageableWindows() where !knownKeys.contains(window.key) {
+    for window in driver.allManageableWindows()
+    where !isSpecialWindow(window) && !knownKeys.contains(window.key)
+    {
       Self.appendUnique(window, to: &workspaceWindows[activeWorkspaceName, default: []])
     }
+  }
+
+  private func focusPreferredWindow(in workspaceName: String) {
+    if focusGizmoWindowIfPresent() {
+      return
+    }
+    focusTopmostWindow(in: workspaceName)
+  }
+
+  private func focusGizmoWindowIfPresent() -> Bool {
+    guard let window = resolveGizmoMainWindow() else {
+      return false
+    }
+
+    if window.isMiniaturized {
+      window.deminiaturize(nil)
+    }
+
+    NSApplication.shared.activate(ignoringOtherApps: true)
+    window.makeKeyAndOrderFront(nil)
+    return true
+  }
+
+  private func resolveGizmoMainWindow() -> NSWindow? {
+    if let taggedCandidate = NSApplication.shared.orderedWindows.first(where: isGizmoMainWindow(_:)) {
+      return taggedCandidate
+    }
+
+    if let taggedCandidate = NSApplication.shared.windows.first(where: isGizmoMainWindow(_:)) {
+      return taggedCandidate
+    }
+
+    if let orderedCandidate = NSApplication.shared.orderedWindows.first(where: isFallbackGizmoWindow(_:)) {
+      return orderedCandidate
+    }
+
+    return NSApplication.shared.windows.first(where: isFallbackGizmoWindow(_:))
+  }
+
+  private func isGizmoMainWindow(_ window: NSWindow) -> Bool {
+    window.identifier == MainWindowIdentity.identifier
+  }
+
+  private func isFallbackGizmoWindow(_ window: NSWindow) -> Bool {
+    if window is NSPanel { return false }
+    return window.canBecomeMain
+  }
+
+  private func focusTopmostWindow(in workspaceName: String) {
+    let windows = workspaceWindows[workspaceName, default: []]
+    for window in windows.reversed() where !isSpecialWindow(window) && driver.isWindowAlive(window) {
+      if driver.focus(window) {
+        return
+      }
+    }
+  }
+
+  private func isSpecialWindow(_ window: ManagedWindowRef) -> Bool {
+    guard let element = window.element else { return false }
+
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else {
+      return false
+    }
+
+    if pid == ProcessInfo.processInfo.processIdentifier {
+      return true
+    }
+
+    guard let currentBundleIdentifier = Bundle.main.bundleIdentifier else {
+      return false
+    }
+    guard
+      let bundleIdentifier = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier
+    else {
+      return false
+    }
+
+    return bundleIdentifier == currentBundleIdentifier
   }
 
   private func notifyStateDidChange() {

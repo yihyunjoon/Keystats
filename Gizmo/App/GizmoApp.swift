@@ -112,6 +112,7 @@ private struct MainWindowOpenActionRegistrar: View {
       return
     }
 
+    configureMainWindow(window)
     centerWindow(window, at: targetCenter)
 
     if window.isMiniaturized {
@@ -164,7 +165,9 @@ private struct MainWindowIdentityRegistrar: NSViewRepresentable {
     let view = NSView(frame: .zero)
 
     DispatchQueue.main.async {
-      view.window?.identifier = MainWindowIdentity.identifier
+      if let window = view.window {
+        configureMainWindow(window)
+      }
     }
 
     return view
@@ -172,7 +175,16 @@ private struct MainWindowIdentityRegistrar: NSViewRepresentable {
 
   func updateNSView(_ nsView: NSView, context: Context) {
     DispatchQueue.main.async {
-      nsView.window?.identifier = MainWindowIdentity.identifier
+      if let window = nsView.window {
+        configureMainWindow(window)
+      }
     }
   }
+}
+
+private func configureMainWindow(_ window: NSWindow) {
+  window.identifier = MainWindowIdentity.identifier
+  window.level = .floating
+  window.collectionBehavior.insert(.canJoinAllSpaces)
+  window.collectionBehavior.insert(.fullScreenAuxiliary)
 }
