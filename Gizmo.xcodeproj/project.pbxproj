@@ -11,14 +11,30 @@
 		D1E9AA012F4E000100000001 /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = D1E9AA032F4E000100000001 /* TOMLKit */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E1B000062F50000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFBE1FF12F02538C007C8C33 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFBE1FF82F02538C007C8C33;
+			remoteInfo = Gizmo;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		CFBE1FF92F02538C007C8C33 /* Gizmo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gizmo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1B000012F50000100000001 /* GizmoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GizmoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CFBE1FFB2F02538C007C8C33 /* Gizmo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Gizmo;
+			sourceTree = "<group>";
+		};
+		E1B000022F50000100000001 /* GizmoTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = GizmoTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +49,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1B000032F50000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -40,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				CFBE1FFB2F02538C007C8C33 /* Gizmo */,
+				E1B000022F50000100000001 /* GizmoTests */,
 				CFBE1FFA2F02538C007C8C33 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -48,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				CFBE1FF92F02538C007C8C33 /* Gizmo.app */,
+				E1B000012F50000100000001 /* GizmoTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,6 +104,29 @@
 			productReference = CFBE1FF92F02538C007C8C33 /* Gizmo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E1B000082F50000100000001 /* GizmoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1B000092F50000100000001 /* Build configuration list for PBXNativeTarget "GizmoTests" */;
+			buildPhases = (
+				E1B000052F50000100000001 /* Sources */,
+				E1B000032F50000100000001 /* Frameworks */,
+				E1B000042F50000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1B000072F50000100000001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E1B000022F50000100000001 /* GizmoTests */,
+			);
+			name = GizmoTests;
+			packageProductDependencies = (
+			);
+			productName = GizmoTests;
+			productReference = E1B000012F50000100000001 /* GizmoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -91,6 +139,10 @@
 				TargetAttributes = {
 					CFBE1FF82F02538C007C8C33 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					E1B000082F50000100000001 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CFBE1FF82F02538C007C8C33;
 					};
 				};
 			};
@@ -113,12 +165,20 @@
 			projectRoot = "";
 			targets = (
 				CFBE1FF82F02538C007C8C33 /* Gizmo */,
+				E1B000082F50000100000001 /* GizmoTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		CFBE1FF72F02538C007C8C33 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1B000042F50000100000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +195,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1B000052F50000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E1B000072F50000100000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFBE1FF82F02538C007C8C33 /* Gizmo */;
+			targetProxy = E1B000062F50000100000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		CFBE20022F02538D007C8C33 /* Debug */ = {
@@ -327,6 +402,55 @@
 			};
 			name = Release;
 		};
+		E1B0000A2F50000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8937RPR87Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.GizmoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gizmo.app/Contents/MacOS/Gizmo";
+				TEST_TARGET_NAME = Gizmo;
+			};
+			name = Debug;
+		};
+		E1B0000B2F50000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8937RPR87Q;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yihyunjoon.GizmoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Gizmo.app/Contents/MacOS/Gizmo";
+				TEST_TARGET_NAME = Gizmo;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -344,6 +468,15 @@
 			buildConfigurations = (
 				CFBE20052F02538D007C8C33 /* Debug */,
 				CFBE20062F02538D007C8C33 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1B000092F50000100000001 /* Build configuration list for PBXNativeTarget "GizmoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1B0000A2F50000100000001 /* Debug */,
+				E1B0000B2F50000100000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

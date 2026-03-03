@@ -4,6 +4,7 @@ import KeyboardShortcuts
 struct GizmoConfig: Equatable {
   var configVersion: Int
   var launcher: LauncherConfig
+  var customMenubar: CustomMenubarConfig
   var keystats: KeystatsConfig
 
   static let supportedConfigVersion = 1
@@ -11,6 +12,7 @@ struct GizmoConfig: Equatable {
   static let `default` = GizmoConfig(
     configVersion: supportedConfigVersion,
     launcher: .default,
+    customMenubar: .default,
     keystats: .default
   )
 }
@@ -94,6 +96,44 @@ struct KeystatsConfig: Equatable {
   static let `default` = KeystatsConfig(
     autoStartMonitoring: true
   )
+}
+
+struct CustomMenubarConfig: Equatable {
+  var enabled: Bool
+  var displayScope: CustomMenubarDisplayScope
+  var position: CustomMenubarPosition
+  var height: Double
+  var widgets: [CustomMenubarWidget]
+  var backgroundOpacity: Double
+  var horizontalPadding: Double
+  var clock24h: Bool
+
+  static let `default` = CustomMenubarConfig(
+    enabled: false,
+    displayScope: .all,
+    position: .bottom,
+    height: 30,
+    widgets: [.frontApp, .clock],
+    backgroundOpacity: 0.75,
+    horizontalPadding: 8,
+    clock24h: true
+  )
+}
+
+enum CustomMenubarDisplayScope: String, CaseIterable, Equatable {
+  case all
+  case active
+  case primary
+}
+
+enum CustomMenubarPosition: String, CaseIterable, Equatable {
+  case top
+  case bottom
+}
+
+enum CustomMenubarWidget: String, CaseIterable, Equatable {
+  case clock
+  case frontApp = "front_app"
 }
 
 extension KeyboardShortcuts.Key {

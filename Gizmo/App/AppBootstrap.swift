@@ -1,3 +1,4 @@
+import AppKit
 import SwiftData
 
 @MainActor
@@ -7,6 +8,7 @@ struct AppBootstrap {
   let accessibilityPermissionService: AccessibilityPermissionService
   let windowManagerService: WindowManagerService
   let launcherPanelService: LauncherPanelService
+  let customMenubarRuntimeService: CustomMenubarRuntimeService
   let sharedModelContainer: ModelContainer
 
   init() {
@@ -23,6 +25,13 @@ struct AppBootstrap {
       accessibilityPermissionService: accessibilityPermissionService,
       configStore: configStore
     )
+    let customMenubarRuntimeService = CustomMenubarRuntimeService()
+    customMenubarRuntimeService.setReloadConfigHandler {
+      _ = configStore.reload()
+    }
+    customMenubarRuntimeService.setQuitHandler {
+      NSApplication.shared.terminate(nil)
+    }
 
     hotKeyService.onHotKeyPressed = {
       Task { @MainActor in
@@ -36,13 +45,16 @@ struct AppBootstrap {
       hotKeyService.configure(
         shortcut: config.launcher.globalHotkey.keyboardShortcut
       )
+      customMenubarRuntimeService.apply(config: config.customMenubar)
     }
+    customMenubarRuntimeService.apply(config: configStore.active.customMenubar)
 
     self.configStore = configStore
     self.hotKeyService = hotKeyService
     self.accessibilityPermissionService = accessibilityPermissionService
     self.windowManagerService = windowManagerService
     self.launcherPanelService = launcherPanelService
+    self.customMenubarRuntimeService = customMenubarRuntimeService
     self.sharedModelContainer = Self.makeSharedModelContainer()
   }
 

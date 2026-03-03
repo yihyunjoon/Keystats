@@ -8,7 +8,12 @@ struct GizmoApp: App {
   private let bootstrap: AppBootstrap
 
   init() {
-    self.bootstrap = AppBootstrap()
+    let bootstrap = AppBootstrap()
+    self.bootstrap = bootstrap
+
+    Task { @MainActor in
+      bootstrap.customMenubarRuntimeService.start()
+    }
   }
 
   var body: some Scene {
@@ -19,7 +24,8 @@ struct GizmoApp: App {
         .background {
           ZStack {
             MainWindowOpenActionRegistrar(
-              launcherPanelService: bootstrap.launcherPanelService
+              launcherPanelService: bootstrap.launcherPanelService,
+              customMenubarRuntimeService: bootstrap.customMenubarRuntimeService
             )
             MainWindowIdentityRegistrar()
               .frame(width: 0, height: 0)
@@ -46,6 +52,9 @@ struct GizmoApp: App {
             shouldAutoStart: bootstrap.configStore.active.keystats.autoStartMonitoring
           )
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+          bootstrap.customMenubarRuntimeService.stop()
+        }
     }
     .modelContainer(bootstrap.sharedModelContainer)
     .defaultSize(width: 900, height: 550)
@@ -54,7 +63,11 @@ struct GizmoApp: App {
       String(localized: "Gizmo"),
       systemImage: "keyboard"
     ) {
-      MenuBarView()
+      MenuBarView(
+        onToggleLauncher: {
+          bootstrap.launcherPanelService.togglePanel()
+        }
+      )
         .environment(bootstrap.configStore)
     }
   }
@@ -64,16 +77,27 @@ private struct MainWindowOpenActionRegistrar: View {
   @Environment(\.openWindow) private var openWindow
 
   let launcherPanelService: LauncherPanelService
+  let customMenubarRuntimeService: CustomMenubarRuntimeService
+  @Environment(ConfigStore.self) private var configStore
 
   var body: some View {
     Color.clear
       .frame(width: 0, height: 0)
       .onAppear {
-        launcherPanelService.onOpenMainWindowRequest = { [openWindow] targetCenter in
+        let focusMainWindow: (CGPoint?) -> Void = { [openWindow] targetCenter in
           openWindow(id: "main")
           DispatchQueue.main.async {
             bringMainWindowToFront(centeredAt: targetCenter, remainingAttempts: 4)
           }
+        }
+
+        launcherPanelService.onOpenMainWindowRequest = focusMainWindow
+        customMenubarRuntimeService.setOpenMainWindowHandler(focusMainWindow)
+        customMenubarRuntimeService.setReloadConfigHandler {
+          _ = configStore.reload()
+        }
+        customMenubarRuntimeService.setTogglePanelHandler {
+          launcherPanelService.togglePanel()
         }
       }
   }

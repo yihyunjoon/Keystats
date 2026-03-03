@@ -11,5 +11,15 @@ force_english_input_source = false
 key = "space"
 modifiers = ["command", "shift"] # command | shift | option | control | function
 
+[custom_menubar]
+enabled = false
+display_scope = "all" # all | active | primary
+position = "bottom" # top | bottom
+height = 30
+widgets = ["front_app", "clock"] # front_app | clock
+background_opacity = 0.75
+horizontal_padding = 8
+clock_24h = true
+
 [keystats]
 auto_start_monitoring = true

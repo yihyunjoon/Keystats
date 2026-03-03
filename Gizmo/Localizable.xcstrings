@@ -39,6 +39,15 @@
     "Active Display" : {
       "comment" : "Launcher window placement option for the currently active display."
     },
+    "All Displays" : {
+
+    },
+    "Background Opacity" : {
+
+    },
+    "Bottom" : {
+
+    },
     "Cancel" : {
       "localizations" : {
         "en" : {
@@ -93,6 +102,12 @@
         }
       }
     },
+    "Clock" : {
+
+    },
+    "Clock 24H" : {
+
+    },
     "Config File" : {
 
     },
@@ -111,6 +126,12 @@
           }
         }
       }
+    },
+    "Custom Menubar" : {
+      "comment" : "Title for the Custom Menubar tab, shown in the sidebar."
+    },
+    "Custom menubar options are configured in config.toml under [custom_menubar]." : {
+
     },
     "Data" : {
       "localizations" : {
@@ -132,6 +153,9 @@
 
     },
     "Display Placement" : {
+
+    },
+    "Display Scope" : {
 
     },
     "Display With Mouse" : {
@@ -160,6 +184,9 @@
       }
     },
     "Force English Input Source" : {
+
+    },
+    "Front App" : {
 
     },
     "General" : {
@@ -203,6 +230,12 @@
     },
     "Heatmap" : {
       "comment" : "Title for the Heatmap tab, shown in the sidebar."
+    },
+    "Height" : {
+
+    },
+    "Horizontal Padding" : {
+
     },
     "Input Monitoring" : {
       "localizations" : {
@@ -388,6 +421,25 @@
         }
       }
     },
+    "Place center" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Place center"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "창 중앙(너비 60%, 높이 80%)으로 배치"
+          }
+        }
+      }
+    },
+    "Position" : {
+
+    },
     "Primary Display" : {
       "comment" : "Launcher window placement option for the primary display."
     },
@@ -527,26 +579,22 @@
         }
       }
     },
-    "Place center" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Place center"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "창 중앙(너비 60%, 높이 80%)으로 배치"
-          }
-        }
-      }
+    "Toggle Launcher" : {
+
+    },
+    "Top" : {
+
+    },
+    "Unknown App" : {
+
     },
     "View" : {
 
     },
     "When enabled, launcher input uses an English keyboard layout while the launcher is open." : {
+
+    },
+    "Widgets" : {
 
     },
     "Window Manager" : {

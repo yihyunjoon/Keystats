@@ -67,6 +67,16 @@ struct ConfigPathResolver {
     key = "space"
     modifiers = ["command", "shift"]
 
+    [custom_menubar]
+    enabled = false
+    display_scope = "all"
+    position = "bottom"
+    height = 30
+    widgets = ["front_app", "clock"]
+    background_opacity = 0.75
+    horizontal_padding = 8
+    clock_24h = true
+
     [keystats]
     auto_start_monitoring = true
     """

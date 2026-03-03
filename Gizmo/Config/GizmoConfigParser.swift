@@ -17,7 +17,12 @@ struct GizmoConfigParser {
     var config = GizmoConfig.default
     var errors: [String] = []
 
-    let allowedRootKeys: Set<String> = ["config-version", "launcher", "keystats"]
+    let allowedRootKeys: Set<String> = [
+      "config-version",
+      "launcher",
+      "custom_menubar",
+      "keystats",
+    ]
     appendUnknownKeys(
       in: rawTable,
       allowed: allowedRootKeys,
@@ -41,6 +46,10 @@ struct GizmoConfigParser {
 
     if let launcherValue = rawTable["launcher"] {
       parseLauncher(launcherValue, config: &config, errors: &errors)
+    }
+
+    if let customMenubarValue = rawTable["custom_menubar"] {
+      parseCustomMenubar(customMenubarValue, config: &config, errors: &errors)
     }
 
     if let keystatsValue = rawTable["keystats"] {
@@ -165,6 +174,164 @@ struct GizmoConfigParser {
     }
   }
 
+  private func parseCustomMenubar(
+    _ raw: TOMLValueConvertible,
+    config: inout GizmoConfig,
+    errors: inout [String]
+  ) {
+    guard let menubarTable = raw.table else {
+      errors.append("custom_menubar: Expected table, got \(raw.type)")
+      return
+    }
+
+    appendUnknownKeys(
+      in: menubarTable,
+      allowed: [
+        "enabled",
+        "display_scope",
+        "position",
+        "height",
+        "widgets",
+        "background_opacity",
+        "horizontal_padding",
+        "clock_24h",
+      ],
+      prefix: "custom_menubar",
+      errors: &errors
+    )
+
+    if let enabledRaw = menubarTable["enabled"] {
+      guard let enabled = enabledRaw.bool else {
+        errors.append("custom_menubar.enabled: Expected bool, got \(enabledRaw.type)")
+        return
+      }
+
+      config.customMenubar.enabled = enabled
+    }
+
+    if let displayScopeRaw = menubarTable["display_scope"] {
+      guard let displayScopeValue = displayScopeRaw.string else {
+        errors.append("custom_menubar.display_scope: Expected string, got \(displayScopeRaw.type)")
+        return
+      }
+
+      guard let scope = CustomMenubarDisplayScope(rawValue: displayScopeValue) else {
+        errors.append(
+          "custom_menubar.display_scope: Invalid value '\(displayScopeValue)'. Allowed: all, active, primary."
+        )
+        return
+      }
+
+      config.customMenubar.displayScope = scope
+    }
+
+    if let positionRaw = menubarTable["position"] {
+      guard let positionValue = positionRaw.string else {
+        errors.append("custom_menubar.position: Expected string, got \(positionRaw.type)")
+        return
+      }
+
+      guard let position = CustomMenubarPosition(rawValue: positionValue) else {
+        errors.append(
+          "custom_menubar.position: Invalid value '\(positionValue)'. Allowed: top, bottom."
+        )
+        return
+      }
+
+      config.customMenubar.position = position
+    }
+
+    if let heightRaw = menubarTable["height"] {
+      guard let height = numberValue(from: heightRaw) else {
+        errors.append("custom_menubar.height: Expected number, got \(heightRaw.type)")
+        return
+      }
+
+      guard (24.0...48.0).contains(height) else {
+        errors.append("custom_menubar.height: Out of range. Allowed: 24...48.")
+        return
+      }
+
+      config.customMenubar.height = height
+    }
+
+    if let widgetsRaw = menubarTable["widgets"] {
+      guard let widgetValues = widgetsRaw.array else {
+        errors.append("custom_menubar.widgets: Expected array, got \(widgetsRaw.type)")
+        return
+      }
+
+      var widgets: [CustomMenubarWidget] = []
+
+      for (index, value) in widgetValues.enumerated() {
+        guard let widgetString = value.string else {
+          errors.append(
+            "custom_menubar.widgets[\(index)]: Expected string, got \(value.type)"
+          )
+          continue
+        }
+
+        guard let widget = CustomMenubarWidget(rawValue: widgetString) else {
+          errors.append(
+            "custom_menubar.widgets[\(index)]: Invalid value '\(widgetString)'. Allowed: front_app, clock."
+          )
+          continue
+        }
+
+        widgets.append(widget)
+      }
+
+      if !widgets.isEmpty {
+        config.customMenubar.widgets = widgets
+      }
+    }
+
+    if let opacityRaw = menubarTable["background_opacity"] {
+      guard let opacity = numberValue(from: opacityRaw) else {
+        errors.append(
+          "custom_menubar.background_opacity: Expected number, got \(opacityRaw.type)"
+        )
+        return
+      }
+
+      guard (0.1...1.0).contains(opacity) else {
+        errors.append(
+          "custom_menubar.background_opacity: Out of range. Allowed: 0.1...1.0."
+        )
+        return
+      }
+
+      config.customMenubar.backgroundOpacity = opacity
+    }
+
+    if let paddingRaw = menubarTable["horizontal_padding"] {
+      guard let padding = numberValue(from: paddingRaw) else {
+        errors.append(
+          "custom_menubar.horizontal_padding: Expected number, got \(paddingRaw.type)"
+        )
+        return
+      }
+
+      guard (0.0...40.0).contains(padding) else {
+        errors.append(
+          "custom_menubar.horizontal_padding: Out of range. Allowed: 0...40."
+        )
+        return
+      }
+
+      config.customMenubar.horizontalPadding = padding
+    }
+
+    if let clock24hRaw = menubarTable["clock_24h"] {
+      guard let clock24h = clock24hRaw.bool else {
+        errors.append("custom_menubar.clock_24h: Expected bool, got \(clock24hRaw.type)")
+        return
+      }
+
+      config.customMenubar.clock24h = clock24h
+    }
+  }
+
   private func parseKeystats(
     _ raw: TOMLValueConvertible,
     config: inout GizmoConfig,
@@ -204,5 +371,11 @@ struct GizmoConfigParser {
       let path = prefix.isEmpty ? key : "\(prefix).\(key)"
       errors.append("\(path): Unknown key.")
     }
+  }
+
+  private func numberValue(from value: TOMLValueConvertible) -> Double? {
+    if let double = value.double { return double }
+    if let int = value.int { return Double(int) }
+    return nil
   }
 }
