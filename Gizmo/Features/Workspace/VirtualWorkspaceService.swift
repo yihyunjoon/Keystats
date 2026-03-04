@@ -186,7 +186,7 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
       false
     }
 
-    let didRaise = AXUIElementPrformAction(
+    let didRaise = AXUIElementPerformAction(
       element,
       kAXRaiseAction as CFString
     ) == .success
@@ -318,6 +318,7 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
 @MainActor
 final class VirtualWorkspaceService {
   private let driver: any WorkspaceWindowDriver
+  private let workspaceMappingStore: any WorkspaceMappingStore
 
   private(set) var enabled: Bool
   private(set) var workspaceNames: [String]
@@ -326,24 +327,31 @@ final class VirtualWorkspaceService {
 
   private var workspaceWindows: [String: [ManagedWindowRef]]
   private var savedFrames: [WindowKey: CGRect] = [:]
+  private var pendingPersistedWorkspaceWindowKeys: [String: [WindowKey]]
+  private var pendingPersistedSavedFrames: [WindowKey: PersistedWindowFrame]
+  private var lastPersistedWorkspaceSnapshot: WorkspaceMappingSnapshot?
 
   var onStateDidChange: ((VirtualWorkspaceState) -> Void)?
 
   convenience init(
     permissionService: AccessibilityPermissionService,
-    initialConfig: WorkspaceConfig
+    initialConfig: WorkspaceConfig,
+    workspaceMappingStore: (any WorkspaceMappingStore)? = nil
   ) {
     self.init(
       driver: LiveWorkspaceWindowDriver(permissionService: permissionService),
-      initialConfig: initialConfig
+      initialConfig: initialConfig,
+      workspaceMappingStore: workspaceMappingStore
     )
   }
 
   init(
     driver: any WorkspaceWindowDriver,
-    initialConfig: WorkspaceConfig
+    initialConfig: WorkspaceConfig,
+    workspaceMappingStore: (any WorkspaceMappingStore)? = nil
   ) {
     self.driver = driver
+    self.workspaceMappingStore = workspaceMappingStore ?? FileWorkspaceMappingStore()
 
     let normalizedWorkspaceNames = Self.normalizeWorkspaceNames(initialConfig.names)
     self.enabled = initialConfig.enabled
@@ -353,6 +361,12 @@ final class VirtualWorkspaceService {
     self.workspaceWindows = Dictionary(
       uniqueKeysWithValues: normalizedWorkspaceNames.map { ($0, []) }
     )
+    let persistedSnapshot = self.workspaceMappingStore.load()
+    self.pendingPersistedWorkspaceWindowKeys = persistedSnapshot?.workspaceWindows ?? [:]
+    self.pendingPersistedSavedFrames = persistedSnapshot?.savedFrames ?? [:]
+    self.lastPersistedWorkspaceSnapshot = nil
+
+    restorePersistedWorkspaceMappingIfNeeded()
   }
 
   var state: VirtualWorkspaceState {
@@ -427,7 +441,38 @@ final class VirtualWorkspaceService {
     notifyStateDidChange()
   }
 
-  func focusWorkspace(_ workspaceName: String) -> Result<Void, WorkspaceError> {
+  func synchronizeActiveWorkspaceToFocusedWindowIfNeeded() {
+    guard enabled else { return }
+    guard workspaceNames.contains(activeWorkspaceName) else { return }
+    guard driver.isAccessibilityGranted() else { return }
+
+    synchronizeManageableWindowsToActiveWorkspace()
+    pruneDeadWindows()
+
+    guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: nil) else {
+      return
+    }
+    if isSpecialWindow(focusedWindow) {
+      return
+    }
+
+    guard let focusedWindowWorkspace = workspaceName(for: focusedWindow.key) else {
+      return
+    }
+    guard focusedWindowWorkspace != activeWorkspaceName else {
+      return
+    }
+
+    _ = focusWorkspace(
+      focusedWindowWorkspace,
+      preserveFocusedWindow: true
+    )
+  }
+
+  func focusWorkspace(
+    _ workspaceName: String,
+    preserveFocusedWindow: Bool = false
+  ) -> Result<Void, WorkspaceError> {
     guard enabled else { return .failure(.workspaceDisabled) }
     guard workspaceNames.contains(workspaceName) else { return .failure(.invalidWorkspace) }
     guard driver.isAccessibilityGranted() else { return .failure(.permissionDenied) }
@@ -435,7 +480,10 @@ final class VirtualWorkspaceService {
     synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
-    guard workspaceName != activeWorkspaceName else { return .success(()) }
+    guard workspaceName != activeWorkspaceName else {
+      persistWorkspaceSnapshotIfNeeded()
+      return .success(())
+    }
 
     let currentWorkspace = activeWorkspaceName
     var hasApplyFailure = false
@@ -454,7 +502,9 @@ final class VirtualWorkspaceService {
 
     previousWorkspaceName = currentWorkspace
     activeWorkspaceName = workspaceName
-    focusPreferredWindow(in: workspaceName)
+    if !preserveFocusedWindow {
+      focusPreferredWindow(in: workspaceName)
+    }
     notifyStateDidChange()
 
     return hasApplyFailure ? .failure(.applyFailed) : .success(())
@@ -532,10 +582,44 @@ final class VirtualWorkspaceService {
         savedFrames.removeValue(forKey: window.key)
       }
     }
+
+    persistWorkspaceSnapshotIfNeeded()
   }
 
   func managedWindowKeys(in workspaceName: String) -> [WindowKey] {
     workspaceWindows[workspaceName, default: []].map(\.key)
+  }
+
+  func workspaceName(for windowKey: WindowKey) -> String? {
+    for workspaceName in workspaceNames {
+      let windows = workspaceWindows[workspaceName, default: []]
+      if windows.contains(where: { $0.key == windowKey }) {
+        return workspaceName
+      }
+    }
+
+    return nil
+  }
+
+  private var workspaceWindowKeysMapping: [String: [WindowKey]] {
+    Dictionary(
+      uniqueKeysWithValues: workspaceNames.map { workspaceName in
+        (workspaceName, workspaceWindows[workspaceName, default: []].map(\.key))
+      }
+    )
+  }
+
+  private var persistedSavedFrames: [WindowKey: PersistedWindowFrame] {
+    savedFrames.reduce(into: [WindowKey: PersistedWindowFrame]()) { partialResult, entry in
+      partialResult[entry.key] = PersistedWindowFrame(rect: entry.value)
+    }
+  }
+
+  private var workspaceMappingSnapshot: WorkspaceMappingSnapshot {
+    WorkspaceMappingSnapshot(
+      workspaceWindows: workspaceWindowKeysMapping,
+      savedFrames: persistedSavedFrames
+    )
   }
 
   private var allManagedWindows: [ManagedWindowRef] {
@@ -614,7 +698,58 @@ final class VirtualWorkspaceService {
     }
   }
 
+  private func restorePersistedWorkspaceMappingIfNeeded() {
+    guard !pendingPersistedWorkspaceWindowKeys.isEmpty || !pendingPersistedSavedFrames.isEmpty else {
+      return
+    }
+    guard enabled else { return }
+    guard workspaceNames.contains(activeWorkspaceName) else { return }
+    guard driver.isAccessibilityGranted() else { return }
+
+    var restoredWorkspaceWindows: [String: [ManagedWindowRef]] =
+      Dictionary(uniqueKeysWithValues: workspaceNames.map { ($0, []) })
+    let liveWindows = driver.allManageableWindows().filter { !isSpecialWindow($0) }
+    let liveWindowsByKey = Dictionary(uniqueKeysWithValues: liveWindows.map { ($0.key, $0) })
+    var assignedWindowKeys: Set<WindowKey> = []
+
+    for workspaceName in workspaceNames {
+      for key in pendingPersistedWorkspaceWindowKeys[workspaceName, default: []] {
+        guard let window = liveWindowsByKey[key] else { continue }
+        guard assignedWindowKeys.insert(key).inserted else { continue }
+        Self.appendUnique(window, to: &restoredWorkspaceWindows[workspaceName, default: []])
+      }
+    }
+
+    for window in liveWindows where !assignedWindowKeys.contains(window.key) {
+      Self.appendUnique(window, to: &restoredWorkspaceWindows[activeWorkspaceName, default: []])
+    }
+
+    workspaceWindows = restoredWorkspaceWindows
+    savedFrames = pendingPersistedSavedFrames.reduce(into: [WindowKey: CGRect]()) { partialResult, entry in
+      let windowKey = entry.key
+      guard liveWindowsByKey[windowKey] != nil else { return }
+      guard let workspaceName = workspaceName(for: windowKey) else { return }
+      guard workspaceName != activeWorkspaceName else { return }
+
+      partialResult[windowKey] = entry.value.rect
+    }
+    pendingPersistedWorkspaceWindowKeys = [:]
+    pendingPersistedSavedFrames = [:]
+
+    _ = reconcileVisibility()
+  }
+
+  private func persistWorkspaceSnapshotIfNeeded() {
+    let snapshot = workspaceMappingSnapshot
+    guard snapshot != lastPersistedWorkspaceSnapshot else { return }
+
+    workspaceMappingStore.save(snapshot)
+    lastPersistedWorkspaceSnapshot = snapshot
+  }
+
   private func synchronizeManageableWindowsToActiveWorkspace() {
+    restorePersistedWorkspaceMappingIfNeeded()
+
     guard enabled else { return }
     guard workspaceNames.contains(activeWorkspaceName) else { return }
     guard driver.isAccessibilityGranted() else { return }
@@ -707,6 +842,7 @@ final class VirtualWorkspaceService {
   }
 
   private func notifyStateDidChange() {
+    persistWorkspaceSnapshotIfNeeded()
     onStateDidChange?(state)
   }
 

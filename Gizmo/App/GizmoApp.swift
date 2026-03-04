@@ -56,6 +56,7 @@ struct GizmoApp: App {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
           bootstrap.virtualWorkspaceService.restoreAllWindows()
           bootstrap.commandShortcutService.stop()
+          bootstrap.workspaceFocusObserverService.stop()
           bootstrap.customMenubarRuntimeService.stop()
         }
     }

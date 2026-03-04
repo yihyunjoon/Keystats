@@ -8,6 +8,7 @@ struct AppBootstrap {
   let accessibilityPermissionService: AccessibilityPermissionService
   let windowManagerService: WindowManagerService
   let virtualWorkspaceService: VirtualWorkspaceService
+  let workspaceFocusObserverService: WorkspaceFocusObserverService
   let commandShortcutService: CommandShortcutService
   let launcherPanelService: LauncherPanelService
   let customMenubarRuntimeService: CustomMenubarRuntimeService
@@ -27,6 +28,9 @@ struct AppBootstrap {
     let virtualWorkspaceService = VirtualWorkspaceService(
       permissionService: accessibilityPermissionService,
       initialConfig: configStore.active.workspace
+    )
+    let workspaceFocusObserverService = WorkspaceFocusObserverService(
+      permissionService: accessibilityPermissionService
     )
     let commandShortcutService = CommandShortcutService(
       windowManagerService: windowManagerService,
@@ -53,6 +57,11 @@ struct AppBootstrap {
       [weak virtualWorkspaceService] workspaceName in
       _ = virtualWorkspaceService?.focusWorkspace(workspaceName)
     }
+    workspaceFocusObserverService.onFocusedWindowChanged = {
+      [weak virtualWorkspaceService] in
+      virtualWorkspaceService?.synchronizeActiveWorkspaceToFocusedWindowIfNeeded()
+    }
+    workspaceFocusObserverService.start()
 
     hotKeyService.onHotKeyPressed = {
       Task { @MainActor in
@@ -81,6 +90,7 @@ struct AppBootstrap {
     self.accessibilityPermissionService = accessibilityPermissionService
     self.windowManagerService = windowManagerService
     self.virtualWorkspaceService = virtualWorkspaceService
+    self.workspaceFocusObserverService = workspaceFocusObserverService
     self.commandShortcutService = commandShortcutService
     self.launcherPanelService = launcherPanelService
     self.customMenubarRuntimeService = customMenubarRuntimeService
