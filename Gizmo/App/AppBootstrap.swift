@@ -12,6 +12,7 @@ struct AppBootstrap {
   let commandShortcutService: CommandShortcutService
   let launcherPanelService: LauncherPanelService
   let customMenubarRuntimeService: CustomMenubarRuntimeService
+  let clipboardHistoryService: ClipboardHistoryService
   let sharedModelContainer: ModelContainer
 
   init() {
@@ -43,6 +44,7 @@ struct AppBootstrap {
       configStore: configStore
     )
     let customMenubarRuntimeService = CustomMenubarRuntimeService()
+    let clipboardHistoryService = ClipboardHistoryService()
 
     virtualWorkspaceService.onStateDidChange = {
       [weak customMenubarRuntimeService, weak launcherPanelService, weak commandShortcutService] state in
@@ -94,6 +96,7 @@ struct AppBootstrap {
     self.commandShortcutService = commandShortcutService
     self.launcherPanelService = launcherPanelService
     self.customMenubarRuntimeService = customMenubarRuntimeService
+    self.clipboardHistoryService = clipboardHistoryService
     self.sharedModelContainer = Self.makeSharedModelContainer()
   }
 

@@ -111,6 +111,9 @@
         }
       }
     },
+    "Clear All" : {
+
+    },
     "Clear All Data?" : {
       "localizations" : {
         "en" : {
@@ -123,6 +126,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "모든 데이터를 삭제하시겠습니까?"
+          }
+        }
+      }
+    },
+    "Clipboard" : {
+      "comment" : "Title for the Clipboard tab, shown in the sidebar.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clipboard"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드"
+          }
+        }
+      }
+    },
+    "Clipboard History" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Clipboard History"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 기록"
           }
         }
       }
@@ -141,6 +177,38 @@
     },
     "Config File" : {
 
+    },
+    "Copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "복사"
+          }
+        }
+      }
+    },
+    "Copy text to start collecting clipboard history." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy text to start collecting clipboard history."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트를 복사하면 클립보드 기록 수집이 시작됩니다."
+          }
+        }
+      }
     },
     "Count" : {
       "localizations" : {
@@ -383,6 +451,22 @@
     "Move Focused Window to Workspace %@" : {
 
     },
+    "No clipboard history yet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No clipboard history yet."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "아직 클립보드 기록이 없습니다."
+          }
+        }
+      }
+    },
     "No commands found." : {
 
     },
@@ -454,6 +538,22 @@
     },
     "Open Gizmo" : {
 
+    },
+    "Open Link" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Link"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "링크 열기"
+          }
+        }
+      }
     },
     "Open System Settings" : {
       "localizations" : {
@@ -583,6 +683,22 @@
     "Search commands" : {
 
     },
+    "Select a clipboard history item." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select a clipboard history item."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "클립보드 기록 항목을 선택하세요."
+          }
+        }
+      }
+    },
     "Select an item" : {
       "localizations" : {
         "en" : {
@@ -655,6 +771,22 @@
         }
       }
     },
+    "TEXT" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TEXT"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "텍스트"
+          }
+        }
+      }
+    },
     "This action cannot be undone." : {
       "localizations" : {
         "en" : {
@@ -717,6 +849,22 @@
     },
     "Unknown Window" : {
 
+    },
+    "URL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "URL"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "URL"
+          }
+        }
+      }
     },
     "View" : {
 

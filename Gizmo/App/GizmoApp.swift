@@ -13,6 +13,7 @@ struct GizmoApp: App {
 
     Task { @MainActor in
       bootstrap.customMenubarRuntimeService.start()
+      bootstrap.clipboardHistoryService.startMonitoring()
     }
   }
 
@@ -37,6 +38,7 @@ struct GizmoApp: App {
         .environment(bootstrap.windowManagerService)
         .environment(bootstrap.virtualWorkspaceService)
         .environment(bootstrap.commandShortcutService)
+        .environment(bootstrap.clipboardHistoryService)
         .onAppear {
           appEnvironment.configureMonitoring(
             container: bootstrap.sharedModelContainer,
@@ -58,6 +60,7 @@ struct GizmoApp: App {
           bootstrap.commandShortcutService.stop()
           bootstrap.workspaceFocusObserverService.stop()
           bootstrap.customMenubarRuntimeService.stop()
+          bootstrap.clipboardHistoryService.stopMonitoring()
         }
     }
     .modelContainer(bootstrap.sharedModelContainer)
