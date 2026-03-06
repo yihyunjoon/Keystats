@@ -6,7 +6,7 @@ enum NavigationItem: Equatable, Hashable, Identifiable {
     let title: LocalizedStringResource
     let items: [NavigationItem]
   }
-
+  
   case general
   case heatmap
   case launcher

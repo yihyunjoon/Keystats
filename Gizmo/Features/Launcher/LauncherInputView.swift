@@ -1,5 +1,16 @@
 import AppKit
+import Observation
 import SwiftUI
+
+@Observable
+@MainActor
+final class LauncherInputModel {
+  var commands: [LauncherCommand]
+
+  init(commands: [LauncherCommand]) {
+    self.commands = commands
+  }
+}
 
 struct LauncherInputView: View {
   private enum Layout {
@@ -12,7 +23,7 @@ struct LauncherInputView: View {
 
   // MARK: - Properties
 
-  let commands: [LauncherCommand]
+  let model: LauncherInputModel
   let onClose: () -> Void
   let onExecuteCommand: (LauncherCommand) -> Result<Void, LauncherCommandError>
   let onOpenAccessibilitySettings: () -> Void
@@ -28,7 +39,7 @@ struct LauncherInputView: View {
 
   private var rankedCommands: [LauncherMatchResult] {
     matcher.rank(
-      commands: commands,
+      commands: model.commands,
       query: query,
       usageStore: usageStore
     )
@@ -230,7 +241,9 @@ struct LauncherInputView: View {
 
 #Preview {
   LauncherInputView(
-    commands: LauncherCommand.makeAll(workspaceNames: WorkspaceConfig.defaultNames),
+    model: LauncherInputModel(
+      commands: LauncherCommand.makeAll(workspaceNames: WorkspaceConfig.defaultNames)
+    ),
     onClose: {},
     onExecuteCommand: { _ in .success(()) },
     onOpenAccessibilitySettings: {},

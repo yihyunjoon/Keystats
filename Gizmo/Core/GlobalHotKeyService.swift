@@ -18,7 +18,7 @@ final class GlobalHotKeyService {
 
   private func registerHandlers() {
     KeyboardShortcuts.removeAllHandlers()
-    KeyboardShortcuts.onKeyUp(for: .toggleLauncher) { [weak self] in
+    KeyboardShortcuts.onKeyDown(for: .toggleLauncher) { [weak self] in
       self?.onHotKeyPressed?()
     }
   }

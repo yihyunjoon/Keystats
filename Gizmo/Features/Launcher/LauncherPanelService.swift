@@ -13,12 +13,12 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   private let commandShortcutService: CommandShortcutService
   private let accessibilityPermissionService: AccessibilityPermissionService
   private let configStore: ConfigStore
+  private let launcherInputModel: LauncherInputModel
 
   var onOpenMainWindowRequest: ((_ targetCenter: CGPoint?) -> Void)?
   var onPanelDidOpen: (() -> Void)?
 
   private var panel: LauncherPanel?
-  private var panelHostingController: NSHostingController<LauncherInputView>?
   private var previousInputSourceID: String?
   private var focusedWindowBeforePanelOpen: AXUIElement?
 
@@ -32,6 +32,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     self.commandShortcutService = commandShortcutService
     self.accessibilityPermissionService = accessibilityPermissionService
     self.configStore = configStore
+    self.launcherInputModel = LauncherInputModel(commands: commandShortcutService.commands)
     super.init()
   }
 
@@ -52,11 +53,8 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   }
 
   func showPanel() {
-    if panel == nil {
-      panel = createPanel()
-    } else {
-      refreshPanelContent()
-    }
+    preloadPanel()
+    refreshCommandList()
 
     guard let panel else { return }
 
@@ -74,7 +72,15 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   }
 
   func refreshCommandList() {
-    refreshPanelContent()
+    launcherInputModel.commands = commandShortcutService.commands
+  }
+
+  func preloadPanel() {
+    guard panel == nil else { return }
+
+    let panel = createPanel()
+    panel.contentViewController?.view.layoutSubtreeIfNeeded()
+    self.panel = panel
   }
 
   // MARK: - Private
@@ -117,7 +123,6 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   private func createPanel() -> LauncherPanel {
     let hostingController = makePanelHostingController()
-    panelHostingController = hostingController
 
     let panel = LauncherPanel(
       contentRect: NSRect(
@@ -143,6 +148,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     panel.isOpaque = false
     panel.backgroundColor = .clear
     panel.hasShadow = true
+    panel.animationBehavior = .none
     panel.delegate = self
     panel.contentViewController = hostingController
 
@@ -155,7 +161,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
 
   private func makeLauncherInputView() -> LauncherInputView {
     LauncherInputView(
-      commands: commandShortcutService.commands,
+      model: launcherInputModel,
       onClose: { [weak self] in
         self?.hidePanel()
       },
@@ -177,11 +183,6 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
         self?.openMainWindowFromLauncher()
       }
     )
-  }
-
-  private func refreshPanelContent() {
-    guard let panelHostingController else { return }
-    panelHostingController.rootView = makeLauncherInputView()
   }
 
   // MARK: - NSWindowDelegate

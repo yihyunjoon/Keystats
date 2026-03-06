@@ -97,6 +97,7 @@ struct AppBootstrap {
       focusedWorkspaceName: virtualWorkspaceService.state.activeWorkspaceName
     )
     launcherPanelService.refreshCommandList()
+    launcherPanelService.preloadPanel()
     launcherAppCatalogService.refreshInBackground()
 
     self.configStore = configStore
