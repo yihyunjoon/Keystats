@@ -188,7 +188,23 @@ private struct MainWindowIdentityRegistrar: NSViewRepresentable {
 
 private func configureMainWindow(_ window: NSWindow) {
   window.identifier = MainWindowIdentity.identifier
+  window.delegate = MainWindowLifecycleController.shared
+  window.isReleasedWhenClosed = false
   window.level = .floating
   window.collectionBehavior.insert(.canJoinAllSpaces)
   window.collectionBehavior.insert(.fullScreenAuxiliary)
+}
+
+@MainActor
+private final class MainWindowLifecycleController: NSObject, NSWindowDelegate {
+  static let shared = MainWindowLifecycleController()
+
+  func windowShouldClose(_ sender: NSWindow) -> Bool {
+    guard sender.identifier == MainWindowIdentity.identifier else {
+      return true
+    }
+
+    sender.orderOut(nil)
+    return false
+  }
 }

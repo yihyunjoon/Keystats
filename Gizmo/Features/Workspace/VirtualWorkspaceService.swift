@@ -319,6 +319,7 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
 final class VirtualWorkspaceService {
   private let driver: any WorkspaceWindowDriver
   private let workspaceMappingStore: any WorkspaceMappingStore
+  var gizmoWindowFocusHandler: @MainActor () -> Bool
 
   private(set) var enabled: Bool
   private(set) var workspaceNames: [String]
@@ -330,28 +331,36 @@ final class VirtualWorkspaceService {
   private var pendingPersistedWorkspaceWindowKeys: [String: [WindowKey]]
   private var pendingPersistedSavedFrames: [WindowKey: PersistedWindowFrame]
   private var lastPersistedWorkspaceSnapshot: WorkspaceMappingSnapshot?
+  private var lastFocusedManagedWindowKey: WindowKey?
+  private var lastFocusedManagedWindowWorkspaceName: String?
 
   var onStateDidChange: ((VirtualWorkspaceState) -> Void)?
 
   convenience init(
     permissionService: AccessibilityPermissionService,
     initialConfig: WorkspaceConfig,
-    workspaceMappingStore: (any WorkspaceMappingStore)? = nil
+    workspaceMappingStore: (any WorkspaceMappingStore)? = nil,
+    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil
   ) {
     self.init(
       driver: LiveWorkspaceWindowDriver(permissionService: permissionService),
       initialConfig: initialConfig,
-      workspaceMappingStore: workspaceMappingStore
+      workspaceMappingStore: workspaceMappingStore,
+      gizmoWindowFocusHandler: gizmoWindowFocusHandler
     )
   }
 
   init(
     driver: any WorkspaceWindowDriver,
     initialConfig: WorkspaceConfig,
-    workspaceMappingStore: (any WorkspaceMappingStore)? = nil
+    workspaceMappingStore: (any WorkspaceMappingStore)? = nil,
+    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil
   ) {
     self.driver = driver
     self.workspaceMappingStore = workspaceMappingStore ?? FileWorkspaceMappingStore()
+    self.gizmoWindowFocusHandler = gizmoWindowFocusHandler ?? {
+      Self.focusResolvedGizmoWindow()
+    }
 
     let normalizedWorkspaceNames = Self.normalizeWorkspaceNames(initialConfig.names)
     self.enabled = initialConfig.enabled
@@ -428,6 +437,12 @@ final class VirtualWorkspaceService {
     if let previousWorkspaceName, !workspaceNames.contains(previousWorkspaceName) {
       self.previousWorkspaceName = nil
     }
+    if let lastFocusedManagedWindowWorkspaceName,
+      !workspaceNames.contains(lastFocusedManagedWindowWorkspaceName)
+    {
+      self.lastFocusedManagedWindowKey = nil
+      self.lastFocusedManagedWindowWorkspaceName = nil
+    }
 
     synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
@@ -449,7 +464,21 @@ final class VirtualWorkspaceService {
     synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
+    let activeWorkspaceHasLiveWindows = hasLiveManagedWindow(in: activeWorkspaceName)
+    let lastFocusedWindowClosedInActiveWorkspace =
+      lastFocusedManagedWindowWorkspaceName == activeWorkspaceName
+      && lastFocusedManagedWindowKey != nil
+      && workspaceName(for: lastFocusedManagedWindowKey!) == nil
+
     guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: nil) else {
+      if !activeWorkspaceHasLiveWindows {
+        _ = focusGizmoWindowIfPresent()
+        clearLastFocusedManagedWindow()
+        return
+      }
+      if lastFocusedWindowClosedInActiveWorkspace {
+        restoreFocusAfterClosedWindowIfPossible()
+      }
       return
     }
     if isSpecialWindow(focusedWindow) {
@@ -459,14 +488,48 @@ final class VirtualWorkspaceService {
     guard let focusedWindowWorkspace = workspaceName(for: focusedWindow.key) else {
       return
     }
-    guard focusedWindowWorkspace != activeWorkspaceName else {
+    if focusedWindowWorkspace == activeWorkspaceName {
+      recordFocusedWindow(focusedWindow, in: focusedWindowWorkspace)
       return
     }
+
+    if !activeWorkspaceHasLiveWindows {
+      _ = focusGizmoWindowIfPresent()
+      clearLastFocusedManagedWindow()
+      return
+    }
+
+    if lastFocusedWindowClosedInActiveWorkspace {
+      restoreFocusAfterClosedWindowIfPossible()
+      return
+    }
+
+    recordFocusedWindow(focusedWindow, in: focusedWindowWorkspace)
 
     _ = focusWorkspace(
       focusedWindowWorkspace,
       preserveFocusedWindow: true
     )
+  }
+
+  func handleObservedWindowDestroyed() {
+    guard enabled else { return }
+    guard workspaceNames.contains(activeWorkspaceName) else { return }
+    guard driver.isAccessibilityGranted() else { return }
+
+    synchronizeManageableWindowsToActiveWorkspace()
+    pruneDeadWindows()
+
+    guard let lastFocusedManagedWindowKey else {
+      if !hasLiveManagedWindow(in: activeWorkspaceName) {
+        _ = focusGizmoWindowIfPresent()
+      }
+      return
+    }
+    guard lastFocusedManagedWindowWorkspaceName == activeWorkspaceName else { return }
+    guard workspaceName(for: lastFocusedManagedWindowKey) == nil else { return }
+
+    restoreFocusAfterClosedWindowIfPossible()
   }
 
   func focusWorkspace(
@@ -623,13 +686,16 @@ final class VirtualWorkspaceService {
   }
 
   private var allManagedWindows: [ManagedWindowRef] {
-    var unique: [WindowKey: ManagedWindowRef] = [:]
-    for windows in workspaceWindows.values {
+    var uniqueKeys: Set<WindowKey> = []
+    var orderedWindows: [ManagedWindowRef] = []
+    for workspaceName in workspaceNames {
+      let windows = workspaceWindows[workspaceName, default: []]
       for window in windows {
-        unique[window.key] = window
+        guard uniqueKeys.insert(window.key).inserted else { continue }
+        orderedWindows.append(window)
       }
     }
-    return Array(unique.values)
+    return orderedWindows
   }
 
   private func reconcileVisibility() -> Bool {
@@ -679,16 +745,22 @@ final class VirtualWorkspaceService {
   }
 
   private func pruneDeadWindows() {
+    let liveWindows = driver.allManageableWindows().filter { !isSpecialWindow($0) }
+    let liveWindowsByKey = Dictionary(uniqueKeysWithValues: liveWindows.map { ($0.key, $0) })
+
     for workspaceName in workspaceNames {
       let windows = workspaceWindows[workspaceName, default: []]
-      var unique: [WindowKey: ManagedWindowRef] = [:]
-      for window in windows where !isSpecialWindow(window) && driver.isWindowAlive(window) {
-        unique[window.key] = window
+      var uniqueKeys: Set<WindowKey> = []
+      var prunedWindows: [ManagedWindowRef] = []
+      for window in windows {
+        guard let liveWindow = liveWindowsByKey[window.key] else { continue }
+        guard uniqueKeys.insert(window.key).inserted else { continue }
+        prunedWindows.append(liveWindow)
       }
-      workspaceWindows[workspaceName] = Array(unique.values)
+      workspaceWindows[workspaceName] = prunedWindows
     }
 
-    let aliveKeys = Set(allManagedWindows.map(\.key))
+    let aliveKeys = Set(liveWindowsByKey.keys)
     savedFrames = savedFrames.filter { aliveKeys.contains($0.key) }
   }
 
@@ -770,6 +842,11 @@ final class VirtualWorkspaceService {
   }
 
   private func focusGizmoWindowIfPresent() -> Bool {
+    gizmoWindowFocusHandler()
+  }
+
+  @MainActor
+  private static func focusResolvedGizmoWindow() -> Bool {
     guard let window = resolveGizmoMainWindow() else {
       return false
     }
@@ -783,7 +860,8 @@ final class VirtualWorkspaceService {
     return true
   }
 
-  private func resolveGizmoMainWindow() -> NSWindow? {
+  @MainActor
+  private static func resolveGizmoMainWindow() -> NSWindow? {
     if let taggedCandidate = NSApplication.shared.orderedWindows.first(where: isGizmoMainWindow(_:)) {
       return taggedCandidate
     }
@@ -799,22 +877,82 @@ final class VirtualWorkspaceService {
     return NSApplication.shared.windows.first(where: isFallbackGizmoWindow(_:))
   }
 
-  private func isGizmoMainWindow(_ window: NSWindow) -> Bool {
+  @MainActor
+  private static func isGizmoMainWindow(_ window: NSWindow) -> Bool {
     window.identifier == MainWindowIdentity.identifier
   }
 
-  private func isFallbackGizmoWindow(_ window: NSWindow) -> Bool {
+  @MainActor
+  private static func isFallbackGizmoWindow(_ window: NSWindow) -> Bool {
     if window is NSPanel { return false }
     return window.canBecomeMain
   }
 
-  private func focusTopmostWindow(in workspaceName: String) {
+  @discardableResult
+  private func focusTopmostWindow(in workspaceName: String) -> ManagedWindowRef? {
     let windows = workspaceWindows[workspaceName, default: []]
     for window in windows.reversed() where !isSpecialWindow(window) && driver.isWindowAlive(window) {
       if driver.focus(window) {
-        return
+        recordFocusedWindow(window, in: workspaceName)
+        return window
       }
     }
+
+    return nil
+  }
+
+  private func restoreFocusAfterClosedWindowIfPossible() {
+    guard hasLiveManagedWindow(in: activeWorkspaceName) else {
+      _ = focusGizmoWindowIfPresent()
+      clearLastFocusedManagedWindow()
+      return
+    }
+
+    guard let topmostWindow = topmostManagedWindow(in: activeWorkspaceName) else {
+      clearLastFocusedManagedWindow()
+      return
+    }
+
+    if focusTopmostWindow(in: activeWorkspaceName) == nil {
+      lastFocusedManagedWindowKey = topmostWindow.key
+      lastFocusedManagedWindowWorkspaceName = activeWorkspaceName
+    }
+  }
+
+  private func hasLiveManagedWindow(in workspaceName: String) -> Bool {
+    workspaceWindows[workspaceName, default: []].contains {
+      !isSpecialWindow($0) && driver.isWindowAlive($0)
+    }
+  }
+
+  private func topmostManagedWindow(in workspaceName: String) -> ManagedWindowRef? {
+    workspaceWindows[workspaceName, default: []]
+      .reversed()
+      .first(where: { !isSpecialWindow($0) && driver.isWindowAlive($0) })
+  }
+
+  private func recordFocusedWindow(
+    _ window: ManagedWindowRef,
+    in workspaceName: String
+  ) {
+    promoteWindowToTopmost(window, in: workspaceName)
+    lastFocusedManagedWindowKey = window.key
+    lastFocusedManagedWindowWorkspaceName = workspaceName
+  }
+
+  private func promoteWindowToTopmost(
+    _ window: ManagedWindowRef,
+    in workspaceName: String
+  ) {
+    var windows = workspaceWindows[workspaceName, default: []]
+    windows.removeAll { $0.key == window.key }
+    windows.append(window)
+    workspaceWindows[workspaceName] = windows
+  }
+
+  private func clearLastFocusedManagedWindow() {
+    lastFocusedManagedWindowKey = nil
+    lastFocusedManagedWindowWorkspaceName = nil
   }
 
   private func isSpecialWindow(_ window: ManagedWindowRef) -> Bool {

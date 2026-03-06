@@ -4,6 +4,7 @@ import ApplicationServices
 @MainActor
 final class WorkspaceFocusObserverService {
   var onFocusedWindowChanged: (() -> Void)?
+  var onObservedWindowDestroyed: (() -> Void)?
 
   private let permissionService: AccessibilityPermissionService
 
@@ -12,6 +13,7 @@ final class WorkspaceFocusObserverService {
   private var axObserver: AXObserver?
   private var observedPID: pid_t?
   private var didScheduleFocusChange = false
+  private var observedWindowElements: [AXUIElement] = []
 
   init(permissionService: AccessibilityPermissionService) {
     self.permissionService = permissionService
@@ -96,7 +98,7 @@ final class WorkspaceFocusObserverService {
     var observer: AXObserver?
     let createResult = AXObserverCreate(
       pid,
-      { _, _, _, refcon in
+      { _, element, notification, refcon in
         guard let refcon else { return }
 
         let service = Unmanaged<WorkspaceFocusObserverService>
@@ -104,7 +106,10 @@ final class WorkspaceFocusObserverService {
           .takeUnretainedValue()
 
         Task { @MainActor in
-          service.handleAXWindowFocusDidChange()
+          service.handleAXNotification(
+            element: element,
+            notification: notification as String
+          )
         }
       },
       &observer
@@ -135,6 +140,12 @@ final class WorkspaceFocusObserverService {
 
     guard didRegisterNotification else { return }
 
+    updateObservedWindowNotifications(
+      observer: observer,
+      appElement: appElement,
+      observerContext: observerContext
+    )
+
     CFRunLoopAddSource(
       CFRunLoopGetMain(),
       AXObserverGetRunLoopSource(observer),
@@ -145,12 +156,28 @@ final class WorkspaceFocusObserverService {
     observedPID = pid
   }
 
-  private func handleAXWindowFocusDidChange() {
+  private func handleAXNotification(
+    element: AXUIElement,
+    notification: String
+  ) {
     guard isRunning else { return }
-    scheduleFocusChange()
+
+    switch notification {
+    case String(kAXFocusedWindowChangedNotification),
+      String(kAXMainWindowChangedNotification):
+      refreshObservedWindowNotifications()
+      scheduleFocusChange()
+    case String(kAXUIElementDestroyedNotification):
+      observedWindowElements.removeAll { CFEqual($0, element) }
+      scheduleObservedWindowDestroyed()
+    default:
+      break
+    }
   }
 
   private func removeAXObserver() {
+    removeObservedWindowNotifications()
+
     guard let axObserver else {
       observedPID = nil
       return
@@ -166,6 +193,94 @@ final class WorkspaceFocusObserverService {
     observedPID = nil
   }
 
+  private func refreshObservedWindowNotifications() {
+    guard let axObserver, let observedPID else { return }
+
+    let appElement = AXUIElementCreateApplication(observedPID)
+    let observerContext = Unmanaged.passUnretained(self).toOpaque()
+    updateObservedWindowNotifications(
+      observer: axObserver,
+      appElement: appElement,
+      observerContext: observerContext
+    )
+  }
+
+  private func updateObservedWindowNotifications(
+    observer: AXObserver,
+    appElement: AXUIElement,
+    observerContext: UnsafeMutableRawPointer
+  ) {
+    let candidateWindows = currentObservedWindows(for: appElement)
+
+    removeObservedWindowNotifications()
+
+    var trackedWindows: [AXUIElement] = []
+    for window in candidateWindows {
+      let addResult = AXObserverAddNotification(
+        observer,
+        window,
+        kAXUIElementDestroyedNotification as CFString,
+        observerContext
+      )
+      guard Self.isNotificationRegistered(addResult) else { continue }
+      trackedWindows.append(window)
+    }
+
+    observedWindowElements = trackedWindows
+  }
+
+  private func removeObservedWindowNotifications() {
+    guard let axObserver else {
+      observedWindowElements = []
+      return
+    }
+
+    for window in observedWindowElements {
+      _ = AXObserverRemoveNotification(
+        axObserver,
+        window,
+        kAXUIElementDestroyedNotification as CFString
+      )
+    }
+    observedWindowElements = []
+  }
+
+  private func currentObservedWindows(for appElement: AXUIElement) -> [AXUIElement] {
+    var windows: [AXUIElement] = []
+
+    if let focusedWindow = copyAXElement(
+      attribute: kAXFocusedWindowAttribute as CFString,
+      from: appElement
+    ) {
+      windows.append(focusedWindow)
+    }
+
+    if let mainWindow = copyAXElement(
+      attribute: kAXMainWindowAttribute as CFString,
+      from: appElement
+    ),
+      !windows.contains(where: { CFEqual($0, mainWindow) })
+    {
+      windows.append(mainWindow)
+    }
+
+    return windows
+  }
+
+  private func copyAXElement(
+    attribute: CFString,
+    from element: AXUIElement
+  ) -> AXUIElement? {
+    var value: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(element, attribute, &value) == .success else {
+      return nil
+    }
+    guard let value else { return nil }
+    guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+
+    return unsafeBitCast(value, to: AXUIElement.self)
+  }
+
   private func scheduleFocusChange() {
     guard !didScheduleFocusChange else { return }
 
@@ -176,6 +291,16 @@ final class WorkspaceFocusObserverService {
       self.didScheduleFocusChange = false
       guard self.isRunning else { return }
 
+      self.onFocusedWindowChanged?()
+    }
+  }
+
+  private func scheduleObservedWindowDestroyed() {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+      guard let self else { return }
+      guard self.isRunning else { return }
+
+      self.onObservedWindowDestroyed?()
       self.onFocusedWindowChanged?()
     }
   }

@@ -71,6 +71,24 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
     )
   }
 
+  @discardableResult
+  func openMainWindow(targetCenter: CGPoint? = nil) -> Bool {
+    if let candidate = existingMainWindow() {
+      centerWindow(candidate, at: targetCenter)
+
+      if candidate.isMiniaturized {
+        candidate.deminiaturize(nil)
+      }
+
+      NSApplication.shared.activate(ignoringOtherApps: true)
+      candidate.makeKeyAndOrderFront(nil)
+      return true
+    }
+
+    onOpenMainWindowRequest?(targetCenter)
+    return onOpenMainWindowRequest != nil
+  }
+
   func refreshCommandList() {
     launcherInputModel.commands = commandShortcutService.commands
   }
@@ -194,20 +212,7 @@ final class LauncherPanelService: NSObject, NSWindowDelegate {
   private func openMainWindowFromLauncher() {
     let targetCenter = launcherDisplayCenter()
     hidePanel()
-
-    guard let candidate = existingMainWindow() else {
-      onOpenMainWindowRequest?(targetCenter)
-      return
-    }
-
-    centerWindow(candidate, at: targetCenter)
-
-    if candidate.isMiniaturized {
-      candidate.deminiaturize(nil)
-    }
-
-    NSApplication.shared.activate(ignoringOtherApps: true)
-    candidate.makeKeyAndOrderFront(nil)
+    _ = openMainWindow(targetCenter: targetCenter)
   }
 
   private func launcherDisplayCenter() -> CGPoint? {

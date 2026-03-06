@@ -66,6 +66,9 @@ struct AppBootstrap {
     launcherPanelService.onPanelDidOpen = { [weak launcherAppCatalogService] in
       launcherAppCatalogService?.refreshInBackground()
     }
+    virtualWorkspaceService.gizmoWindowFocusHandler = { [weak launcherPanelService] in
+      launcherPanelService?.openMainWindow() ?? false
+    }
     customMenubarRuntimeService.setWorkspaceSelectionHandler {
       [weak virtualWorkspaceService] workspaceName in
       _ = virtualWorkspaceService?.focusWorkspace(workspaceName)
@@ -73,6 +76,10 @@ struct AppBootstrap {
     workspaceFocusObserverService.onFocusedWindowChanged = {
       [weak virtualWorkspaceService] in
       virtualWorkspaceService?.synchronizeActiveWorkspaceToFocusedWindowIfNeeded()
+    }
+    workspaceFocusObserverService.onObservedWindowDestroyed = {
+      [weak virtualWorkspaceService] in
+      virtualWorkspaceService?.handleObservedWindowDestroyed()
     }
     workspaceFocusObserverService.start()
 
