@@ -117,10 +117,9 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     XCTAssertFalse(driver.setFrameCalls.isEmpty)
   }
 
-  func testClosedFocusedWindowWithNoRemainingWindowDoesNotRestoreOrSwitch() {
+  func testClosedFocusedWindowWithNoRemainingWindowDoesNotShowGizmoOrSwitch() {
     let window1 = makeWindow(key: "axwn:100")
     let window2 = makeWindow(key: "axwn:200")
-    var gizmoFocusCalls = 0
 
     let driver = MockWorkspaceWindowDriver(
       manageableWindows: [window1, window2],
@@ -133,11 +132,7 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     let service = VirtualWorkspaceService(
       driver: driver,
       initialConfig: makeWorkspaceConfig(),
-      workspaceMappingStore: MockWorkspaceMappingStore(),
-      gizmoWindowFocusHandler: {
-        gizmoFocusCalls += 1
-        return true
-      }
+      workspaceMappingStore: MockWorkspaceMappingStore()
     )
 
     driver.focusedWindow = window2
@@ -156,13 +151,11 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     XCTAssertEqual(service.state.activeWorkspaceName, "1")
     XCTAssertTrue(driver.focusCalls.isEmpty)
     XCTAssertTrue(driver.setFrameCalls.isEmpty)
-    XCTAssertEqual(gizmoFocusCalls, 1)
   }
 
-  func testEmptyActiveWorkspaceShowsGizmoEvenWithoutTrackedLastFocusedWindow() {
+  func testEmptyActiveWorkspaceDoesNotShowGizmoWithoutTrackedLastFocusedWindow() {
     let window1 = makeWindow(key: "axwn:100")
     let window2 = makeWindow(key: "axwn:200")
-    var gizmoFocusCalls = 0
 
     let driver = MockWorkspaceWindowDriver(
       manageableWindows: [window1, window2],
@@ -175,11 +168,7 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     let service = VirtualWorkspaceService(
       driver: driver,
       initialConfig: makeWorkspaceConfig(),
-      workspaceMappingStore: MockWorkspaceMappingStore(),
-      gizmoWindowFocusHandler: {
-        gizmoFocusCalls += 1
-        return true
-      }
+      workspaceMappingStore: MockWorkspaceMappingStore()
     )
 
     driver.focusedWindow = window2
@@ -194,7 +183,6 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     XCTAssertEqual(service.state.activeWorkspaceName, "1")
     XCTAssertTrue(driver.focusCalls.isEmpty)
     XCTAssertTrue(driver.setFrameCalls.isEmpty)
-    XCTAssertEqual(gizmoFocusCalls, 1)
   }
 
   func testObservedWindowDestroyedRestoresTopmostWindowInActiveWorkspace() {
@@ -235,10 +223,9 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     XCTAssertEqual(driver.focusCalls, [window1.key])
   }
 
-  func testObservedWindowDestroyedShowsGizmoWhenActiveWorkspaceBecomesEmpty() {
+  func testObservedWindowDestroyedDoesNotShowGizmoWhenActiveWorkspaceBecomesEmpty() {
     let window1 = makeWindow(key: "axwn:100")
     let window2 = makeWindow(key: "axwn:200")
-    var gizmoFocusCalls = 0
 
     let driver = MockWorkspaceWindowDriver(
       manageableWindows: [window1, window2],
@@ -251,11 +238,7 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     let service = VirtualWorkspaceService(
       driver: driver,
       initialConfig: makeWorkspaceConfig(),
-      workspaceMappingStore: MockWorkspaceMappingStore(),
-      gizmoWindowFocusHandler: {
-        gizmoFocusCalls += 1
-        return true
-      }
+      workspaceMappingStore: MockWorkspaceMappingStore()
     )
 
     driver.focusedWindow = window2
@@ -270,7 +253,72 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
 
     XCTAssertEqual(service.state.activeWorkspaceName, "1")
     XCTAssertTrue(driver.focusCalls.isEmpty)
-    XCTAssertEqual(gizmoFocusCalls, 1)
+    XCTAssertTrue(driver.setFrameCalls.isEmpty)
+  }
+
+  func testWorkspaceSyncIgnoresFallbackWindowWhenThereIsNoFocusedWindow() {
+    let window1 = makeWindow(key: "axwn:100")
+    let window2 = makeWindow(key: "axwn:200")
+
+    let driver = MockWorkspaceWindowDriver(
+      manageableWindows: [window1, window2],
+      frames: [
+        window1.key: CGRect(x: 0, y: 0, width: 700, height: 500),
+        window2.key: CGRect(x: 20, y: 20, width: 700, height: 500),
+      ],
+      visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080)
+    )
+    let service = VirtualWorkspaceService(
+      driver: driver,
+      initialConfig: makeWorkspaceConfig(),
+      workspaceMappingStore: MockWorkspaceMappingStore()
+    )
+
+    driver.focusedWindow = window2
+    _ = service.moveFocusedWindowToWorkspace("2")
+    driver.resetRecordedCalls()
+
+    driver.focusedWindow = nil
+    driver.fallbackFocusedWindow = window2
+
+    service.synchronizeActiveWorkspaceToFocusedWindowIfNeeded()
+
+    XCTAssertEqual(service.state.activeWorkspaceName, "1")
+    XCTAssertTrue(driver.focusCalls.isEmpty)
+    XCTAssertTrue(driver.setFrameCalls.isEmpty)
+  }
+
+  func testWorkspaceSyncIgnoresFocusedWindowThatIsNotManaged() {
+    let window1 = makeWindow(key: "axwn:100")
+    let window2 = makeWindow(key: "axwn:200")
+    let unmanagedWindow = makeWindow(key: "axel:500:42")
+
+    let driver = MockWorkspaceWindowDriver(
+      manageableWindows: [window1, window2],
+      frames: [
+        window1.key: CGRect(x: 0, y: 0, width: 700, height: 500),
+        window2.key: CGRect(x: 20, y: 20, width: 700, height: 500),
+        unmanagedWindow.key: CGRect(x: 40, y: 40, width: 700, height: 500),
+      ],
+      visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080)
+    )
+    let service = VirtualWorkspaceService(
+      driver: driver,
+      initialConfig: makeWorkspaceConfig(),
+      workspaceMappingStore: MockWorkspaceMappingStore()
+    )
+
+    driver.focusedWindow = window2
+    _ = service.moveFocusedWindowToWorkspace("2")
+    driver.resetRecordedCalls()
+
+    driver.focusedWindow = unmanagedWindow
+
+    service.synchronizeActiveWorkspaceToFocusedWindowIfNeeded()
+
+    XCTAssertEqual(service.state.activeWorkspaceName, "1")
+    XCTAssertTrue(driver.focusCalls.isEmpty)
+    XCTAssertTrue(driver.setFrameCalls.isEmpty)
   }
 
   func testFocusWithinWorkspaceUpdatesMRUForSubsequentRestore() {
@@ -548,6 +596,7 @@ private final class MockWorkspaceWindowDriver: WorkspaceWindowDriver {
 
   var accessibilityGranted = true
   var focusedWindow: ManagedWindowRef?
+  var fallbackFocusedWindow: ManagedWindowRef?
   var manageableWindows: [ManagedWindowRef]
   var frames: [WindowKey: CGRect]
   var visibleFrame: CGRect?
@@ -570,8 +619,11 @@ private final class MockWorkspaceWindowDriver: WorkspaceWindowDriver {
     accessibilityGranted
   }
 
-  func resolveFocusedWindow(preferredWindow: AXUIElement?) -> ManagedWindowRef? {
-    focusedWindow
+  func resolveFocusedWindow(
+    preferredWindow: AXUIElement?,
+    allowFallbackWindow: Bool
+  ) -> ManagedWindowRef? {
+    focusedWindow ?? (allowFallbackWindow ? fallbackFocusedWindow : nil)
   }
 
   func allManageableWindows() -> [ManagedWindowRef] {

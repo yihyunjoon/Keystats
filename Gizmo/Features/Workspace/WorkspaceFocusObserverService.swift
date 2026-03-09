@@ -297,7 +297,10 @@ final class WorkspaceFocusObserverService {
       from: appElement
     ) {
       lastFocusedExternalWindowElement = mainWindow
+      return
     }
+
+    lastFocusedExternalWindowElement = nil
   }
 
   private func copyAXElement(

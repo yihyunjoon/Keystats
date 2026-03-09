@@ -101,7 +101,10 @@ struct VirtualWorkspaceDebugSnapshot: Equatable {
 
 protocol WorkspaceWindowDriver {
   @MainActor func isAccessibilityGranted() -> Bool
-  @MainActor func resolveFocusedWindow(preferredWindow: AXUIElement?) -> ManagedWindowRef?
+  @MainActor func resolveFocusedWindow(
+    preferredWindow: AXUIElement?,
+    allowFallbackWindow: Bool
+  ) -> ManagedWindowRef?
   @MainActor func allManageableWindows() -> [ManagedWindowRef]
   @MainActor func frame(for window: ManagedWindowRef) -> CGRect?
   @MainActor func setFrame(_ frame: CGRect, for window: ManagedWindowRef) -> Bool
@@ -128,7 +131,10 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
     return permissionService.isGranted
   }
 
-  func resolveFocusedWindow(preferredWindow: AXUIElement?) -> ManagedWindowRef? {
+  func resolveFocusedWindow(
+    preferredWindow: AXUIElement?,
+    allowFallbackWindow: Bool
+  ) -> ManagedWindowRef? {
     if let preferredRef = validatedManagedWindowRef(from: preferredWindow) {
       return preferredRef
     }
@@ -139,6 +145,10 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
 
     if let focusedWindowRef, !belongsToCurrentProcess(focusedWindowRef) {
       return focusedWindowRef
+    }
+
+    guard allowFallbackWindow else {
+      return nil
     }
 
     if let fallbackRef = validatedManagedWindowRef(from: fallbackWindowElementProvider()) {
@@ -267,6 +277,10 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
       return false
     }
 
+    if isFinderDesktopWindow(window) {
+      return false
+    }
+
     if let windowNumber = windowNumber(from: window.key) {
       return candidateWindowNumbers.contains(windowNumber)
     }
@@ -300,11 +314,37 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
     return isWindowAlive(windowRef) ? windowRef : nil
   }
 
+  private func isFinderDesktopWindow(_ window: ManagedWindowRef) -> Bool {
+    guard windowNumber(from: window.key) == nil else {
+      return false
+    }
+
+    let title = window.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    guard title.isEmpty else {
+      return false
+    }
+
+    guard let element = window.element else {
+      return false
+    }
+
+    return bundleIdentifier(for: element) == "com.apple.finder"
+  }
+
   private func belongsToCurrentProcess(_ window: ManagedWindowRef) -> Bool {
     guard let element = window.element else { return false }
     var pid: pid_t = 0
     guard AXUIElementGetPid(element, &pid) == .success else { return false }
     return pid == ProcessInfo.processInfo.processIdentifier
+  }
+
+  private func bundleIdentifier(for element: AXUIElement) -> String? {
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else {
+      return nil
+    }
+
+    return NSRunningApplication(processIdentifier: pid)?.bundleIdentifier
   }
 
   private func appName(for element: AXUIElement) -> String? {
@@ -342,7 +382,6 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
 final class VirtualWorkspaceService {
   private let driver: any WorkspaceWindowDriver
   private let workspaceMappingStore: any WorkspaceMappingStore
-  var gizmoWindowFocusHandler: @MainActor () -> Bool
 
   private(set) var enabled: Bool
   private(set) var workspaceNames: [String]
@@ -363,7 +402,6 @@ final class VirtualWorkspaceService {
     permissionService: AccessibilityPermissionService,
     initialConfig: WorkspaceConfig,
     workspaceMappingStore: (any WorkspaceMappingStore)? = nil,
-    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil,
     fallbackWindowElementProvider: (@MainActor () -> AXUIElement?)? = nil
   ) {
     self.init(
@@ -372,22 +410,17 @@ final class VirtualWorkspaceService {
         fallbackWindowElementProvider: fallbackWindowElementProvider ?? { nil }
       ),
       initialConfig: initialConfig,
-      workspaceMappingStore: workspaceMappingStore,
-      gizmoWindowFocusHandler: gizmoWindowFocusHandler
+      workspaceMappingStore: workspaceMappingStore
     )
   }
 
   init(
     driver: any WorkspaceWindowDriver,
     initialConfig: WorkspaceConfig,
-    workspaceMappingStore: (any WorkspaceMappingStore)? = nil,
-    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil
+    workspaceMappingStore: (any WorkspaceMappingStore)? = nil
   ) {
     self.driver = driver
     self.workspaceMappingStore = workspaceMappingStore ?? FileWorkspaceMappingStore()
-    self.gizmoWindowFocusHandler = gizmoWindowFocusHandler ?? {
-      Self.focusResolvedGizmoWindow()
-    }
 
     let normalizedWorkspaceNames = Self.normalizeWorkspaceNames(initialConfig.names)
     let persistedSnapshot = self.workspaceMappingStore.load()
@@ -503,9 +536,11 @@ final class VirtualWorkspaceService {
       && lastFocusedManagedWindowKey != nil
       && workspaceName(for: lastFocusedManagedWindowKey!) == nil
 
-    guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: nil) else {
+    guard let focusedWindow = driver.resolveFocusedWindow(
+      preferredWindow: nil,
+      allowFallbackWindow: false
+    ) else {
       if !activeWorkspaceHasLiveWindows {
-        _ = focusGizmoWindowIfPresent()
         clearLastFocusedManagedWindow()
         return
       }
@@ -527,7 +562,6 @@ final class VirtualWorkspaceService {
     }
 
     if !activeWorkspaceHasLiveWindows {
-      _ = focusGizmoWindowIfPresent()
       clearLastFocusedManagedWindow()
       return
     }
@@ -554,9 +588,6 @@ final class VirtualWorkspaceService {
     pruneDeadWindows()
 
     guard let lastFocusedManagedWindowKey else {
-      if !hasLiveManagedWindow(in: activeWorkspaceName) {
-        _ = focusGizmoWindowIfPresent()
-      }
       return
     }
     guard lastFocusedManagedWindowWorkspaceName == activeWorkspaceName else { return }
@@ -627,7 +658,10 @@ final class VirtualWorkspaceService {
     synchronizeManageableWindowsToActiveWorkspace()
     pruneDeadWindows()
 
-    guard let focusedWindow = driver.resolveFocusedWindow(preferredWindow: preferredWindowElement) else {
+    guard let focusedWindow = driver.resolveFocusedWindow(
+      preferredWindow: preferredWindowElement,
+      allowFallbackWindow: true
+    ) else {
       return .failure(.noFocusedWindow)
     }
     if isSpecialWindow(focusedWindow) {
@@ -869,57 +903,7 @@ final class VirtualWorkspaceService {
   }
 
   private func focusPreferredWindow(in workspaceName: String) {
-    if focusGizmoWindowIfPresent() {
-      return
-    }
     focusTopmostWindow(in: workspaceName)
-  }
-
-  private func focusGizmoWindowIfPresent() -> Bool {
-    gizmoWindowFocusHandler()
-  }
-
-  @MainActor
-  private static func focusResolvedGizmoWindow() -> Bool {
-    guard let window = resolveGizmoMainWindow() else {
-      return false
-    }
-
-    if window.isMiniaturized {
-      window.deminiaturize(nil)
-    }
-
-    NSApplication.shared.activate(ignoringOtherApps: true)
-    window.makeKeyAndOrderFront(nil)
-    return true
-  }
-
-  @MainActor
-  private static func resolveGizmoMainWindow() -> NSWindow? {
-    if let taggedCandidate = NSApplication.shared.orderedWindows.first(where: isGizmoMainWindow(_:)) {
-      return taggedCandidate
-    }
-
-    if let taggedCandidate = NSApplication.shared.windows.first(where: isGizmoMainWindow(_:)) {
-      return taggedCandidate
-    }
-
-    if let orderedCandidate = NSApplication.shared.orderedWindows.first(where: isFallbackGizmoWindow(_:)) {
-      return orderedCandidate
-    }
-
-    return NSApplication.shared.windows.first(where: isFallbackGizmoWindow(_:))
-  }
-
-  @MainActor
-  private static func isGizmoMainWindow(_ window: NSWindow) -> Bool {
-    window.identifier == MainWindowIdentity.identifier
-  }
-
-  @MainActor
-  private static func isFallbackGizmoWindow(_ window: NSWindow) -> Bool {
-    if window is NSPanel { return false }
-    return window.canBecomeMain
   }
 
   @discardableResult
@@ -937,7 +921,6 @@ final class VirtualWorkspaceService {
 
   private func restoreFocusAfterClosedWindowIfPossible() {
     guard hasLiveManagedWindow(in: activeWorkspaceName) else {
-      _ = focusGizmoWindowIfPresent()
       clearLastFocusedManagedWindow()
       return
     }

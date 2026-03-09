@@ -112,6 +112,14 @@ extension AXUIElement {
       return (focusedWindowValue as! AXUIElement)
     }
 
+    var focusedAppPID: pid_t = 0
+    guard AXUIElementGetPid(focusedApp, &focusedAppPID) == .success else {
+      return nil
+    }
+    guard focusedAppPID == ProcessInfo.processInfo.processIdentifier else {
+      return nil
+    }
+
     guard
       let windowsValue = focusedApp.attributeValue(kAXWindowsAttribute as CFString),
       let windows = windowsValue as? [AXUIElement]
