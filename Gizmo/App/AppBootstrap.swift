@@ -14,6 +14,7 @@ struct AppBootstrap {
   let launcherPanelService: LauncherPanelService
   let customMenubarRuntimeService: CustomMenubarRuntimeService
   let clipboardHistoryService: ClipboardHistoryService
+  let launchAtLoginService: LaunchAtLoginService
   let sharedModelContainer: ModelContainer
 
   init() {
@@ -22,17 +23,23 @@ struct AppBootstrap {
 
     let hotKeyService = GlobalHotKeyService()
     let accessibilityPermissionService = AccessibilityPermissionService()
+    let workspaceFocusObserverService = WorkspaceFocusObserverService(
+      permissionService: accessibilityPermissionService
+    )
     let windowManagerService = WindowManagerService(
       permissionService: accessibilityPermissionService,
       customMenubarConfigProvider: { configStore.active.customMenubar },
-      gapsConfigProvider: { configStore.active.gaps }
+      gapsConfigProvider: { configStore.active.gaps },
+      fallbackWindowElementProvider: {
+        workspaceFocusObserverService.preferredWindowElement()
+      }
     )
     let virtualWorkspaceService = VirtualWorkspaceService(
       permissionService: accessibilityPermissionService,
-      initialConfig: configStore.active.workspace
-    )
-    let workspaceFocusObserverService = WorkspaceFocusObserverService(
-      permissionService: accessibilityPermissionService
+      initialConfig: configStore.active.workspace,
+      fallbackWindowElementProvider: {
+        workspaceFocusObserverService.preferredWindowElement()
+      }
     )
     let launcherAppCatalogService = LauncherAppCatalogService()
     let commandShortcutService = CommandShortcutService(
@@ -48,6 +55,7 @@ struct AppBootstrap {
     )
     let customMenubarRuntimeService = CustomMenubarRuntimeService()
     let clipboardHistoryService = ClipboardHistoryService()
+    let launchAtLoginService = LaunchAtLoginService()
 
     virtualWorkspaceService.onStateDidChange = {
       [weak customMenubarRuntimeService, weak launcherPanelService, weak commandShortcutService] state in
@@ -118,6 +126,7 @@ struct AppBootstrap {
     self.launcherPanelService = launcherPanelService
     self.customMenubarRuntimeService = customMenubarRuntimeService
     self.clipboardHistoryService = clipboardHistoryService
+    self.launchAtLoginService = launchAtLoginService
     self.sharedModelContainer = Self.makeSharedModelContainer()
   }
 

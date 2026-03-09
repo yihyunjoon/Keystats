@@ -37,21 +37,25 @@ struct WorkspaceMappingSnapshot: Codable, Equatable {
   static let currentVersion = 1
 
   var version: Int
+  var activeWorkspaceName: String?
   var workspaceWindows: [String: [WindowKey]]
   var savedFrames: [WindowKey: PersistedWindowFrame]
 
   private enum CodingKeys: String, CodingKey {
     case version
+    case activeWorkspaceName
     case workspaceWindows
     case savedFrames
   }
 
   init(
     version: Int = currentVersion,
+    activeWorkspaceName: String? = nil,
     workspaceWindows: [String: [WindowKey]],
     savedFrames: [WindowKey: PersistedWindowFrame] = [:]
   ) {
     self.version = version
+    self.activeWorkspaceName = activeWorkspaceName
     self.workspaceWindows = workspaceWindows
     self.savedFrames = savedFrames
   }
@@ -59,6 +63,10 @@ struct WorkspaceMappingSnapshot: Codable, Equatable {
   init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     version = try container.decode(Int.self, forKey: .version)
+    activeWorkspaceName = try container.decodeIfPresent(
+      String.self,
+      forKey: .activeWorkspaceName
+    )
     workspaceWindows = try container.decode(
       [String: [WindowKey]].self,
       forKey: .workspaceWindows

@@ -39,6 +39,7 @@ struct GizmoApp: App {
         .environment(bootstrap.virtualWorkspaceService)
         .environment(bootstrap.commandShortcutService)
         .environment(bootstrap.clipboardHistoryService)
+        .environment(bootstrap.launchAtLoginService)
         .onAppear {
           appEnvironment.configureMonitoring(
             container: bootstrap.sharedModelContainer,

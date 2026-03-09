@@ -8,6 +8,7 @@ final class WorkspaceMappingStoreTests: XCTestCase {
     let store = FileWorkspaceMappingStore(fileURL: fileURL)
 
     let snapshot = WorkspaceMappingSnapshot(
+      activeWorkspaceName: "2",
       workspaceWindows: [
         "1": ["axwn:100", "axwn:200"],
         "2": ["axwn:300"],
@@ -59,6 +60,7 @@ final class WorkspaceMappingStoreTests: XCTestCase {
     let store = FileWorkspaceMappingStore(fileURL: fileURL)
     let snapshot = try XCTUnwrap(store.load())
 
+    XCTAssertNil(snapshot.activeWorkspaceName)
     XCTAssertEqual(snapshot.workspaceWindows, ["1": ["axwn:100"]])
     XCTAssertEqual(snapshot.savedFrames, [:])
   }

@@ -350,6 +350,56 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
     XCTAssertFalse(driver.setFrameCalls.contains(where: { $0.windowKey == activeKey }))
   }
 
+  func testRestoresPersistedActiveWorkspaceOnStartup() {
+    let driver = MockWorkspaceWindowDriver(
+      manageableWindows: [],
+      frames: [:],
+      visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080)
+    )
+    let store = MockWorkspaceMappingStore(
+      loadSnapshot: WorkspaceMappingSnapshot(
+        activeWorkspaceName: "2",
+        workspaceWindows: [
+          "1": [],
+          "2": [],
+        ]
+      )
+    )
+
+    let service = VirtualWorkspaceService(
+      driver: driver,
+      initialConfig: makeWorkspaceConfig(),
+      workspaceMappingStore: store
+    )
+
+    XCTAssertEqual(service.state.activeWorkspaceName, "2")
+  }
+
+  func testInvalidPersistedActiveWorkspaceFallsBackToFirstConfiguredWorkspace() {
+    let driver = MockWorkspaceWindowDriver(
+      manageableWindows: [],
+      frames: [:],
+      visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1080)
+    )
+    let store = MockWorkspaceMappingStore(
+      loadSnapshot: WorkspaceMappingSnapshot(
+        activeWorkspaceName: "3",
+        workspaceWindows: [
+          "1": [],
+          "2": [],
+        ]
+      )
+    )
+
+    let service = VirtualWorkspaceService(
+      driver: driver,
+      initialConfig: makeWorkspaceConfig(),
+      workspaceMappingStore: store
+    )
+
+    XCTAssertEqual(service.state.activeWorkspaceName, "1")
+  }
+
   func testSwitchToInactiveWorkspaceRestoresPersistedFrame() {
     let activeKey = "axwn:100"
     let inactiveKey = "axwn:200"
@@ -429,6 +479,7 @@ final class VirtualWorkspaceServiceTests: XCTestCase {
 
     let persistedSnapshot = try XCTUnwrap(store.savedSnapshots.last)
 
+    XCTAssertEqual(persistedSnapshot.activeWorkspaceName, "2")
     XCTAssertEqual(Set(persistedSnapshot.workspaceWindows["1", default: []]), workspace1KeysBefore)
     XCTAssertEqual(Set(persistedSnapshot.workspaceWindows["2", default: []]), workspace2KeysBefore)
     XCTAssertEqual(Set(persistedSnapshot.savedFrames.keys), [key1])

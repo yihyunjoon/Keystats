@@ -57,17 +57,20 @@ final class WindowManagerService {
   private let permissionService: AccessibilityPermissionService
   private let customMenubarConfigProvider: @MainActor () -> CustomMenubarConfig
   private let gapsConfigProvider: @MainActor () -> WindowManagerGapsConfig
+  private let fallbackWindowElementProvider: @MainActor () -> AXUIElement?
 
   // MARK: - Initialization
 
   init(
     permissionService: AccessibilityPermissionService,
     customMenubarConfigProvider: @escaping @MainActor () -> CustomMenubarConfig = { .default },
-    gapsConfigProvider: @escaping @MainActor () -> WindowManagerGapsConfig = { .default }
+    gapsConfigProvider: @escaping @MainActor () -> WindowManagerGapsConfig = { .default },
+    fallbackWindowElementProvider: @escaping @MainActor () -> AXUIElement? = { nil }
   ) {
     self.permissionService = permissionService
     self.customMenubarConfigProvider = customMenubarConfigProvider
     self.gapsConfigProvider = gapsConfigProvider
+    self.fallbackWindowElementProvider = fallbackWindowElementProvider
   }
 
   // MARK: - Public API
@@ -82,10 +85,9 @@ final class WindowManagerService {
       return .failure(.permissionDenied)
     }
 
-    let resolvedWindowElement =
-      preferredWindowElement?.frame?.isNull == false
-      ? preferredWindowElement
-      : AXUIElement.focusedWindowElement()
+    let resolvedWindowElement = resolveWindowElement(
+      preferredWindowElement: preferredWindowElement
+    )
 
     guard
       let windowElement = resolvedWindowElement,
@@ -222,6 +224,37 @@ final class WindowManagerService {
     }
 
     return UUID().uuidString
+  }
+
+  private func resolveWindowElement(
+    preferredWindowElement: AXUIElement?
+  ) -> AXUIElement? {
+    if let preferredWindowElement = validatedWindowElement(preferredWindowElement) {
+      return preferredWindowElement
+    }
+
+    let focusedWindowElement = validatedWindowElement(AXUIElement.focusedWindowElement())
+    if let focusedWindowElement, !belongsToCurrentProcess(focusedWindowElement) {
+      return focusedWindowElement
+    }
+
+    if let fallbackWindowElement = validatedWindowElement(fallbackWindowElementProvider()) {
+      return fallbackWindowElement
+    }
+
+    return focusedWindowElement
+  }
+
+  private func validatedWindowElement(_ element: AXUIElement?) -> AXUIElement? {
+    guard let element else { return nil }
+    guard let frame = element.frame, !frame.isNull else { return nil }
+    return element
+  }
+
+  private func belongsToCurrentProcess(_ element: AXUIElement) -> Bool {
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else { return false }
+    return pid == ProcessInfo.processInfo.processIdentifier
   }
 }
 

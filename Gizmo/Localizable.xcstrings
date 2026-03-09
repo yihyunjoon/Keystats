@@ -61,6 +61,22 @@
     "All regular app windows are automatically managed in the current workspace." : {
 
     },
+    "Approve Gizmo in System Settings > General > Login Items to finish enabling launch at login." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Approve Gizmo in System Settings > General > Login Items to finish enabling launch at login."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 시 실행을 완료하려면 시스템 설정 > 일반 > 로그인 항목에서 Gizmo를 승인하세요."
+          }
+        }
+      }
+    },
     "Assign a shortcut per command. Assigned shortcuts work globally while Gizmo is running." : {
 
     },
@@ -308,8 +324,56 @@
         }
       }
     },
+    "Gizmo couldn't verify the current login item status." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gizmo couldn't verify the current login item status."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "현재 로그인 항목 상태를 확인하지 못했습니다."
+          }
+        }
+      }
+    },
     "Gizmo" : {
 
+    },
+    "Gizmo will launch automatically when you sign in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gizmo will launch automatically when you sign in."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인하면 Gizmo가 자동으로 실행됩니다."
+          }
+        }
+      }
+    },
+    "Gizmo won't launch automatically when you sign in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Gizmo won't launch automatically when you sign in."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인해도 Gizmo가 자동으로 실행되지 않습니다."
+          }
+        }
+      }
     },
     "Global Shortcut" : {
 
@@ -416,6 +480,38 @@
     },
     "Launch app %@" : {
 
+    },
+    "Launch Gizmo when you sign in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Launch Gizmo when you sign in."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인할 때 Gizmo 실행"
+          }
+        }
+      }
+    },
+    "Launch at Login" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Launch at Login"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 시 실행"
+          }
+        }
+      }
     },
     "Launcher" : {
       "comment" : "Title for the Launcher tab, shown in the sidebar."
@@ -548,6 +644,22 @@
     },
     "Open Gizmo" : {
 
+    },
+    "Open Login Items Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Login Items Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 항목 설정 열기"
+          }
+        }
+      }
     },
     "Open Link" : {
       "localizations" : {

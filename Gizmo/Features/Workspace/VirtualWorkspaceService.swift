@@ -113,9 +113,14 @@ protocol WorkspaceWindowDriver {
 @MainActor
 final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
   private let permissionService: AccessibilityPermissionService
+  private let fallbackWindowElementProvider: @MainActor () -> AXUIElement?
 
-  init(permissionService: AccessibilityPermissionService) {
+  init(
+    permissionService: AccessibilityPermissionService,
+    fallbackWindowElementProvider: @escaping @MainActor () -> AXUIElement? = { nil }
+  ) {
     self.permissionService = permissionService
+    self.fallbackWindowElementProvider = fallbackWindowElementProvider
   }
 
   func isAccessibilityGranted() -> Bool {
@@ -124,18 +129,23 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
   }
 
   func resolveFocusedWindow(preferredWindow: AXUIElement?) -> ManagedWindowRef? {
-    if let preferredWindow {
-      let preferredRef = makeManagedWindowRef(from: preferredWindow)
-      if isWindowAlive(preferredRef) {
-        return preferredRef
-      }
+    if let preferredRef = validatedManagedWindowRef(from: preferredWindow) {
+      return preferredRef
     }
 
-    guard let focusedWindow = AXUIElement.focusedWindowElement() else {
-      return nil
+    let focusedWindowRef = validatedManagedWindowRef(
+      from: AXUIElement.focusedWindowElement()
+    )
+
+    if let focusedWindowRef, !belongsToCurrentProcess(focusedWindowRef) {
+      return focusedWindowRef
     }
-    let focusedRef = makeManagedWindowRef(from: focusedWindow)
-    return isWindowAlive(focusedRef) ? focusedRef : nil
+
+    if let fallbackRef = validatedManagedWindowRef(from: fallbackWindowElementProvider()) {
+      return fallbackRef
+    }
+
+    return focusedWindowRef
   }
 
   func allManageableWindows() -> [ManagedWindowRef] {
@@ -284,6 +294,19 @@ final class LiveWorkspaceWindowDriver: WorkspaceWindowDriver {
     )
   }
 
+  private func validatedManagedWindowRef(from element: AXUIElement?) -> ManagedWindowRef? {
+    guard let element else { return nil }
+    let windowRef = makeManagedWindowRef(from: element)
+    return isWindowAlive(windowRef) ? windowRef : nil
+  }
+
+  private func belongsToCurrentProcess(_ window: ManagedWindowRef) -> Bool {
+    guard let element = window.element else { return false }
+    var pid: pid_t = 0
+    guard AXUIElementGetPid(element, &pid) == .success else { return false }
+    return pid == ProcessInfo.processInfo.processIdentifier
+  }
+
   private func appName(for element: AXUIElement) -> String? {
     var pid: pid_t = 0
     guard AXUIElementGetPid(element, &pid) == .success else { return nil }
@@ -340,10 +363,14 @@ final class VirtualWorkspaceService {
     permissionService: AccessibilityPermissionService,
     initialConfig: WorkspaceConfig,
     workspaceMappingStore: (any WorkspaceMappingStore)? = nil,
-    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil
+    gizmoWindowFocusHandler: (@MainActor () -> Bool)? = nil,
+    fallbackWindowElementProvider: (@MainActor () -> AXUIElement?)? = nil
   ) {
     self.init(
-      driver: LiveWorkspaceWindowDriver(permissionService: permissionService),
+      driver: LiveWorkspaceWindowDriver(
+        permissionService: permissionService,
+        fallbackWindowElementProvider: fallbackWindowElementProvider ?? { nil }
+      ),
       initialConfig: initialConfig,
       workspaceMappingStore: workspaceMappingStore,
       gizmoWindowFocusHandler: gizmoWindowFocusHandler
@@ -363,14 +390,20 @@ final class VirtualWorkspaceService {
     }
 
     let normalizedWorkspaceNames = Self.normalizeWorkspaceNames(initialConfig.names)
+    let persistedSnapshot = self.workspaceMappingStore.load()
+    let restoredActiveWorkspaceName = persistedSnapshot?.activeWorkspaceName
+      .flatMap { workspaceName in
+        normalizedWorkspaceNames.contains(workspaceName) ? workspaceName : nil
+      }
     self.enabled = initialConfig.enabled
     self.workspaceNames = normalizedWorkspaceNames
-    self.activeWorkspaceName = normalizedWorkspaceNames.first ?? WorkspaceConfig.defaultNames[0]
+    self.activeWorkspaceName = restoredActiveWorkspaceName
+      ?? normalizedWorkspaceNames.first
+      ?? WorkspaceConfig.defaultNames[0]
     self.previousWorkspaceName = nil
     self.workspaceWindows = Dictionary(
       uniqueKeysWithValues: normalizedWorkspaceNames.map { ($0, []) }
     )
-    let persistedSnapshot = self.workspaceMappingStore.load()
     self.pendingPersistedWorkspaceWindowKeys = persistedSnapshot?.workspaceWindows ?? [:]
     self.pendingPersistedSavedFrames = persistedSnapshot?.savedFrames ?? [:]
     self.lastPersistedWorkspaceSnapshot = nil
@@ -680,6 +713,7 @@ final class VirtualWorkspaceService {
 
   private var workspaceMappingSnapshot: WorkspaceMappingSnapshot {
     WorkspaceMappingSnapshot(
+      activeWorkspaceName: activeWorkspaceName,
       workspaceWindows: workspaceWindowKeysMapping,
       savedFrames: persistedSavedFrames
     )

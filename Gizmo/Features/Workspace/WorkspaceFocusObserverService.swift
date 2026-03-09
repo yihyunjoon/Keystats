@@ -14,6 +14,7 @@ final class WorkspaceFocusObserverService {
   private var observedPID: pid_t?
   private var didScheduleFocusChange = false
   private var observedWindowElements: [AXUIElement] = []
+  private var lastFocusedExternalWindowElement: AXUIElement?
 
   init(permissionService: AccessibilityPermissionService) {
     self.permissionService = permissionService
@@ -26,6 +27,10 @@ final class WorkspaceFocusObserverService {
     observeActiveApplicationIfNeeded()
     refreshObserverForFrontmostApplication()
     scheduleFocusChange()
+  }
+
+  func preferredWindowElement() -> AXUIElement? {
+    lastFocusedExternalWindowElement
   }
 
   func stop() {
@@ -145,6 +150,7 @@ final class WorkspaceFocusObserverService {
       appElement: appElement,
       observerContext: observerContext
     )
+    updateLastFocusedExternalWindow(from: appElement)
 
     CFRunLoopAddSource(
       CFRunLoopGetMain(),
@@ -166,9 +172,13 @@ final class WorkspaceFocusObserverService {
     case String(kAXFocusedWindowChangedNotification),
       String(kAXMainWindowChangedNotification):
       refreshObservedWindowNotifications()
+      refreshLastFocusedExternalWindow()
       scheduleFocusChange()
     case String(kAXUIElementDestroyedNotification):
       observedWindowElements.removeAll { CFEqual($0, element) }
+      if let lastFocusedExternalWindowElement, CFEqual(lastFocusedExternalWindowElement, element) {
+        self.lastFocusedExternalWindowElement = nil
+      }
       scheduleObservedWindowDestroyed()
     default:
       break
@@ -203,6 +213,12 @@ final class WorkspaceFocusObserverService {
       appElement: appElement,
       observerContext: observerContext
     )
+  }
+
+  private func refreshLastFocusedExternalWindow() {
+    guard let observedPID else { return }
+    let appElement = AXUIElementCreateApplication(observedPID)
+    updateLastFocusedExternalWindow(from: appElement)
   }
 
   private func updateObservedWindowNotifications(
@@ -265,6 +281,23 @@ final class WorkspaceFocusObserverService {
     }
 
     return windows
+  }
+
+  private func updateLastFocusedExternalWindow(from appElement: AXUIElement) {
+    if let focusedWindow = copyAXElement(
+      attribute: kAXFocusedWindowAttribute as CFString,
+      from: appElement
+    ) {
+      lastFocusedExternalWindowElement = focusedWindow
+      return
+    }
+
+    if let mainWindow = copyAXElement(
+      attribute: kAXMainWindowAttribute as CFString,
+      from: appElement
+    ) {
+      lastFocusedExternalWindowElement = mainWindow
+    }
   }
 
   private func copyAXElement(
