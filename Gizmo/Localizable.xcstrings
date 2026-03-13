@@ -61,6 +61,22 @@
     "All regular app windows are automatically managed in the current workspace." : {
 
     },
+    "Applications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applications"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "응용 프로그램"
+          }
+        }
+      }
+    },
     "Approve Gizmo in System Settings > General > Login Items to finish enabling launch at login." : {
       "localizations" : {
         "en" : {
@@ -76,9 +92,6 @@
           }
         }
       }
-    },
-    "Assign a shortcut per command. Assigned shortcuts work globally while Gizmo is running." : {
-
     },
     "Background Opacity" : {
 
@@ -187,9 +200,6 @@
     },
     "Command" : {
       "comment" : "Title for the Command tab, shown in the sidebar."
-    },
-    "Commands" : {
-
     },
     "Config File" : {
 
@@ -324,6 +334,9 @@
         }
       }
     },
+    "Gizmo" : {
+
+    },
     "Gizmo couldn't verify the current login item status." : {
       "localizations" : {
         "en" : {
@@ -339,9 +352,6 @@
           }
         }
       }
-    },
-    "Gizmo" : {
-
     },
     "Gizmo will launch automatically when you sign in." : {
       "localizations" : {
@@ -478,8 +488,21 @@
         }
       }
     },
-    "Launch app %@" : {
-
+    "Launch at Login" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Launch at Login"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 시 실행"
+          }
+        }
+      }
     },
     "Launch Gizmo when you sign in." : {
       "localizations" : {
@@ -493,22 +516,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "로그인할 때 Gizmo 실행"
-          }
-        }
-      }
-    },
-    "Launch at Login" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Launch at Login"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "로그인 시 실행"
           }
         }
       }
@@ -547,11 +554,24 @@
         }
       }
     },
-    "Move focused window to workspace %@" : {
-
-    },
     "Move Focused Window to Workspace %@" : {
 
+    },
+    "Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이름"
+          }
+        }
+      }
     },
     "No clipboard history yet." : {
       "localizations" : {
@@ -645,22 +665,6 @@
     "Open Gizmo" : {
 
     },
-    "Open Login Items Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open Login Items Settings"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "로그인 항목 설정 열기"
-          }
-        }
-      }
-    },
     "Open Link" : {
       "localizations" : {
         "en" : {
@@ -673,6 +677,22 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "링크 열기"
+          }
+        }
+      }
+    },
+    "Open Login Items Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Login Items Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "로그인 항목 설정 열기"
           }
         }
       }
@@ -703,9 +723,6 @@
 
     },
     "Outer Top" : {
-
-    },
-    "Overview" : {
 
     },
     "Path" : {
@@ -840,6 +857,22 @@
     "Set the launcher hot key in config.toml and press Reload Config." : {
 
     },
+    "Shortcut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "단축키"
+          }
+        }
+      }
+    },
     "Showing top %lld keys by press count." : {
 
     },
@@ -864,12 +897,6 @@
           }
         }
       }
-    },
-    "Switch between current and previous workspace" : {
-
-    },
-    "Switch to workspace %@" : {
-
     },
     "Switch to Workspace %@" : {
 
@@ -966,9 +993,6 @@
     "Top" : {
 
     },
-    "Total Commands" : {
-
-    },
     "Unknown App" : {
 
     },
@@ -1059,9 +1083,6 @@
           }
         }
       }
-    },
-    "Window tiling command" : {
-
     },
     "Workspace" : {
       "comment" : "Title for the Workspace tab, shown in the sidebar."
