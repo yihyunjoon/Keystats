@@ -71,7 +71,7 @@ struct ConfigPathResolver {
 
     [launcher.global_hotkey]
     key = "space"
-    modifiers = ["command", "shift"]
+    modifiers = ["command"]
 
     [custom_menubar]
     enabled = false
@@ -86,16 +86,16 @@ struct ConfigPathResolver {
 
     [workspace]
     enabled = true
-    names = ["1", "2", "3", "4", "5"]
+    names = ["q", "w", "e", "r", "t"]
     hide_strategy = "corner_offscreen"
 
     [gaps]
-    inner.horizontal = 0
-    inner.vertical = 0
-    outer.left = 0
-    outer.top = 0
-    outer.right = 0
-    outer.bottom = 0
+    inner.horizontal = 4
+    inner.vertical = 4
+    outer.left = 4
+    outer.top = 4
+    outer.right = 4
+    outer.bottom = 4
 
     [keystats]
     auto_start_monitoring = true

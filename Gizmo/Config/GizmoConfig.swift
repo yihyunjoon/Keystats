@@ -26,7 +26,7 @@ struct WorkspaceConfig: Equatable {
   var names: [String]
   var hideStrategy: WorkspaceHideStrategy
 
-  static let defaultNames: [String] = ["1", "2", "3", "4", "5"]
+  static let defaultNames: [String] = ["q", "w", "e", "r", "t"]
 
   static let `default` = WorkspaceConfig(
     enabled: true,
@@ -63,7 +63,7 @@ struct HotkeyConfig: Equatable {
 
   static let `default` = HotkeyConfig(
     key: "space",
-    modifiers: [.command, .shift]
+    modifiers: [.command]
   )
 
   var keyboardShortcut: KeyboardShortcuts.Shortcut? {
@@ -135,8 +135,8 @@ struct WindowManagerInnerGaps: Equatable {
   var vertical: Double
 
   static let `default` = WindowManagerInnerGaps(
-    horizontal: 0,
-    vertical: 0
+    horizontal: 4,
+    vertical: 4
   )
 }
 
@@ -147,10 +147,10 @@ struct WindowManagerOuterGaps: Equatable {
   var bottom: Double
 
   static let `default` = WindowManagerOuterGaps(
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0
+    left: 4,
+    top: 4,
+    right: 4,
+    bottom: 4
   )
 }
 

@@ -27,6 +27,6 @@ final class GlobalHotKeyService {
 extension KeyboardShortcuts.Name {
   static let toggleLauncher = Self(
     "toggleLauncher",
-    default: .init(.space, modifiers: [.command, .shift])
+    default: .init(.space, modifiers: [.command])
   )
 }
