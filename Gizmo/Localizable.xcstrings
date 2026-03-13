@@ -58,9 +58,6 @@
     "All Displays" : {
 
     },
-    "All regular app windows are automatically managed in the current workspace." : {
-
-    },
     "Applications" : {
       "localizations" : {
         "en" : {
@@ -289,9 +286,6 @@
     "Enabled" : {
 
     },
-    "Executed: %@" : {
-
-    },
     "Failed to launch the app." : {
 
     },
@@ -410,9 +404,6 @@
     "Height" : {
 
     },
-    "Hidden" : {
-
-    },
     "Hidden Managed Windows" : {
 
     },
@@ -420,12 +411,6 @@
 
     },
     "Horizontal Padding" : {
-
-    },
-    "How Gizmo Workspace Works" : {
-
-    },
-    "id: %@" : {
 
     },
     "Inner Horizontal" : {
@@ -532,12 +517,6 @@
     "Managed Window Count" : {
 
     },
-    "Managed Windows" : {
-
-    },
-    "Managed windows in inactive workspaces are hidden by moving them off-screen." : {
-
-    },
     "Monitoring" : {
       "localizations" : {
         "en" : {
@@ -614,9 +593,6 @@
     "No managed windows in this workspace." : {
 
     },
-    "No managed windows yet." : {
-
-    },
     "No matching commands." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -652,12 +628,6 @@
           }
         }
       }
-    },
-    "offscreen" : {
-
-    },
-    "onscreen" : {
-
     },
     "Open Config" : {
 
@@ -901,25 +871,6 @@
     "Switch to Workspace %@" : {
 
     },
-    "Switching back restores managed windows to their saved frames." : {
-
-    },
-    "Test Commands" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test Commands"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "테스트 명령"
-          }
-        }
-      }
-    },
     "TEXT" : {
       "localizations" : {
         "en" : {
@@ -1033,9 +984,6 @@
       }
     },
     "View" : {
-
-    },
-    "Visible" : {
 
     },
     "When enabled, launcher input uses an English keyboard layout while the launcher is open." : {

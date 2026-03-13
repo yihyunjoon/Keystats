@@ -71,30 +71,6 @@ struct WorkspaceView: View {
       }
 
       Section {
-        Text(String(localized: "All regular app windows are automatically managed in the current workspace."))
-        Text(String(localized: "Managed windows in inactive workspaces are hidden by moving them off-screen."))
-        Text(String(localized: "Switching back restores managed windows to their saved frames."))
-      } header: {
-        Text(String(localized: "How Gizmo Workspace Works"))
-      }
-
-      Section {
-        if snapshot.managedWindowKeys.isEmpty {
-          Text(String(localized: "No managed windows yet."))
-            .foregroundStyle(.secondary)
-        } else {
-          ForEach(snapshot.managedWindowKeys, id: \.self) { windowKey in
-            managedWindowRow(
-              windowKey: windowKey,
-              isHidden: snapshot.hiddenWindowKeys.contains(windowKey)
-            )
-          }
-        }
-      } header: {
-        Text(String(localized: "Managed Windows"))
-      }
-
-      Section {
         ForEach(snapshot.state.workspaceNames, id: \.self) { workspaceName in
           let keys = snapshot.workspaceWindows[workspaceName, default: []]
           VStack(alignment: .leading, spacing: 6) {
@@ -127,48 +103,6 @@ struct WorkspaceView: View {
     .onReceive(refreshTimer) { _ in
       refreshWindowCatalog()
     }
-  }
-
-  @ViewBuilder
-  private func managedWindowRow(
-    windowKey: WindowKey,
-    isHidden: Bool
-  ) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      HStack(spacing: 8) {
-        Text(windowDisplayName(for: windowKey))
-          .font(.system(size: 13, weight: .medium))
-
-        if isHidden {
-          Text(String(localized: "Hidden"))
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(.orange.opacity(0.16))
-            .clipShape(Capsule())
-        } else {
-          Text(String(localized: "Visible"))
-            .font(.caption2)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(.green.opacity(0.16))
-            .clipShape(Capsule())
-        }
-      }
-
-      if let windowNumber = windowNumber(from: windowKey),
-        let catalogEntry = windowCatalog[windowNumber]
-      {
-        Text(windowMetaText(for: catalogEntry))
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      } else {
-        Text("id: \(windowKey)")
-          .font(.caption.monospaced())
-          .foregroundStyle(.secondary)
-      }
-    }
-    .padding(.vertical, 2)
   }
 
   private func refreshWindowCatalog() {
@@ -220,22 +154,6 @@ struct WorkspaceView: View {
     }
 
     return "\(catalogEntry.ownerName) (#\(catalogEntry.windowNumber))"
-  }
-
-  private func windowMetaText(for entry: WindowCatalogEntry) -> String {
-    let frame = entry.frame
-    let frameText = String(
-      format: "frame: %.0f, %.0f %.0fx%.0f",
-      frame.minX,
-      frame.minY,
-      frame.width,
-      frame.height
-    )
-    let visibilityText = entry.isOnscreen
-      ? String(localized: "onscreen")
-      : String(localized: "offscreen")
-
-    return "\(frameText) · \(visibilityText)"
   }
 
   private func windowNumber(from windowKey: WindowKey) -> Int? {

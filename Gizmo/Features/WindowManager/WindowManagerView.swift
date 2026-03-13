@@ -4,11 +4,6 @@ struct WindowManagerView: View {
   @Environment(ConfigStore.self) private var configStore
   @Environment(AccessibilityPermissionService.self)
   private var accessibilityPermissionService
-  @Environment(WindowManagerService.self)
-  private var windowManagerService
-
-  @State private var lastError: WindowManagerError?
-  @State private var lastSucceededAction: WindowTileAction?
 
   var body: some View {
     Form {
@@ -33,32 +28,6 @@ struct WindowManagerView: View {
         }
       } header: {
         Text(String(localized: "Accessibility Permission"))
-      }
-
-      Section {
-        Button(String(localized: "Tile left half")) {
-          execute(.leftHalf)
-        }
-
-        Button(String(localized: "Tile right half")) {
-          execute(.rightHalf)
-        }
-
-        Button(String(localized: "Place center")) {
-          execute(.placeCenter)
-        }
-
-        if let lastError {
-          Text(lastError.localizedDescription)
-            .foregroundStyle(.red)
-            .font(.footnote)
-        } else if let lastSucceededAction {
-          Text("Executed: \(lastSucceededAction.commandTitle)")
-          .foregroundStyle(.secondary)
-          .font(.footnote)
-        }
-      } header: {
-        Text(String(localized: "Test Commands"))
       }
 
       Section {
@@ -102,17 +71,6 @@ struct WindowManagerView: View {
     .formStyle(.grouped)
     .onAppear {
       accessibilityPermissionService.refresh()
-    }
-  }
-
-  private func execute(_ action: WindowTileAction) {
-    switch windowManagerService.execute(action) {
-    case .success:
-      lastError = nil
-      lastSucceededAction = action
-    case .failure(let error):
-      lastSucceededAction = nil
-      lastError = error
     }
   }
 }
